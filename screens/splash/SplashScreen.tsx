@@ -1,0 +1,73 @@
+import { Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import AppLogo from '../../assets/logo.svg';
+import { COLORS, FONTS, SPACING } from '../../constants/styling';
+import { useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/RootNavigator';
+
+type SplashNavProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
+
+const SplashScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<SplashNavProp>();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigation.navigate('Onboarding');
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle='dark-content' backgroundColor={COLORS.primary} />
+
+      <View
+        style={[
+          styles.content,
+          {
+            paddingBottom:
+              Platform.OS === 'android'
+                ? StatusBar.currentHeight || 0
+                : insets.bottom,
+          },
+        ]}
+      >
+        <AppLogo />
+        <Text style={styles.heading}>AI Humanizer</Text>
+        <Text style={styles.text}>Technology that speaks like you</Text>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default SplashScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  heading: {
+    fontSize: 42.9,
+    fontFamily: FONTS.sora.bold,
+    color: COLORS.dark,
+  },
+  text: {
+    fontSize: 20,
+    color: COLORS.dark,
+    fontFamily: FONTS.dmSans.medium,
+  },
+});
