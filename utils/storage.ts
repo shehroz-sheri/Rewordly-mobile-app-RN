@@ -123,6 +123,29 @@ export const StorageService = {
             return 0;
         }
     },
+
+    /**
+     * Mark onboarding as completed
+     */
+    setOnboardingCompleted: (): void => {
+        try {
+            storage.set('onboarding_completed', true);
+        } catch (error) {
+            console.error('Error setting onboarding completed:', error);
+        }
+    },
+
+    /**
+     * Check if onboarding has been completed
+     */
+    hasCompletedOnboarding: (): boolean => {
+        try {
+            return storage.getBoolean('onboarding_completed') || false;
+        } catch (error) {
+            console.error('Error checking onboarding status:', error);
+            return false;
+        }
+    },
 };
 
 // API Configuration interfaces
@@ -137,6 +160,7 @@ export interface ApiConfig {
     ai_detector_ios_url?: string;
     plagiarism_checker_android_url?: string;
     plagiarism_checker_ios_url?: string;
+    validate_receipt_URL?: string;
 }
 
 interface CachedApiConfig {

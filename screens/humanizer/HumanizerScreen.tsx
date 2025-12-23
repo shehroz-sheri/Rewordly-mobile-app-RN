@@ -53,6 +53,24 @@ const HumanizerScreen: React.FC = () => {
       Alert.alert('No Input', 'Please paste or type text to humanize.');
       return;
     }
+
+    // ✅ WORD LIMIT CHECK FOR FREE USERS
+    const wordCheck = SubscriptionService.checkWordLimit(inputText);
+    if (!wordCheck.allowed) {
+      Alert.alert(
+        'Word Limit Exceeded',
+        `Free users can process up to ${wordCheck.limit} words per request. Your text contains ${wordCheck.wordCount} words.\n\nUpgrade to Premium for unlimited words!`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade to Premium',
+            onPress: () => navigation.navigate('Paywall')
+          }
+        ]
+      );
+      return;
+    }
+
     const MAX_WORDS = 5000;
     if (wordCount > MAX_WORDS) {
       Alert.alert(
@@ -64,11 +82,11 @@ const HumanizerScreen: React.FC = () => {
 
     // ✅ SUBSCRIPTION CHECK
     const isPremium = SubscriptionService.isPremium();
-    
+
     if (!isPremium) {
       // Check free tries
       const hasFreeTries = SubscriptionService.hasFreeTries('humanizer');
-      
+
       if (!hasFreeTries) {
         // No premium, no free tries → Show paywall
         Alert.alert(
@@ -81,7 +99,7 @@ const HumanizerScreen: React.FC = () => {
         );
         return;
       }
-      
+
       // Has free try → Use it
       SubscriptionService.useFreeTry('humanizer');
       console.log('✅ Used free try for Humanizer');
@@ -231,8 +249,8 @@ const HumanizerScreen: React.FC = () => {
 
     // Handle PDF files - send to backend
     if (result.status === FileReader.ExtractionResult.REQUIRES_BACKEND_PDF ||
-        result.status === FileReader.ExtractionResult.REQUIRES_BACKEND_DOCX) {
-      
+      result.status === FileReader.ExtractionResult.REQUIRES_BACKEND_DOCX) {
+
       if (!fileExtractUrl) {
         Alert.alert('Error', 'File extraction service not configured. Please try again later.');
         setIsLoading(false);
@@ -297,7 +315,7 @@ const HumanizerScreen: React.FC = () => {
         }
       } catch (backendError: any) {
         console.error('❌ Backend extraction failed:', backendError);
-        
+
         // Check if it's a file size error
         if (backendError.message?.includes('FILE_TOO_LARGE')) {
           const actualMessage = backendError.message.split(':')[1] || 'File is too large. Maximum size is 8MB.';

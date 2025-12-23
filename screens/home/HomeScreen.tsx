@@ -53,7 +53,7 @@ const HomeScreen: React.FC = () => {
   );
 
   const handleGoPro = () => {
-    navigation.navigate('PaywallScreen');
+    navigation.navigate('Paywall');
   };
 
   const toolWidgets: ToolItem[] = [
@@ -144,8 +144,8 @@ const HomeScreen: React.FC = () => {
         );
       } else {
         Alert.alert(
-          'Coming Soon! 🚀',
-          `${item.title} feature will be available in the next update.`,
+          'Coming Soon!',
+          `${item.title} feature will be available soon.`,
           [{ text: 'OK', style: 'default' }],
         );
       }

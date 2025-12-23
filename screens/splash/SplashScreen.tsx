@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { StorageService } from '../../utils/storage';
 
 type SplashNavProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -18,7 +19,18 @@ const SplashScreen: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.navigate('Onboarding');
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = StorageService.hasCompletedOnboarding();
+      
+      if (hasCompletedOnboarding) {
+        // Returning user - go directly to home
+        console.log('🔄 Returning user - navigating to home');
+        navigation.navigate('MainTabs');
+      } else {
+        // New user - show onboarding
+        console.log('🆕 New user - showing onboarding');
+        navigation.navigate('Onboarding');
+      }
     }, 2500);
 
     return () => clearTimeout(timer);

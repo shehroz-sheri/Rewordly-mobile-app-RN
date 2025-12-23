@@ -9,8 +9,12 @@ const storage = createMMKV({
 // Product IDs from App Store Connect
 const PRODUCT_IDS = {
     WEEKLY: 'com.detector.humanizer.weekly.plan',
+    MONTHLY: 'com.detector.humanizer.monthly.plan',
     YEARLY: 'com.detector.humanizer.yearly.plan',
 };
+
+// Free user limits
+const FREE_USER_WORD_LIMIT = 1000;
 
 // Storage Keys
 const KEYS = {
@@ -19,6 +23,8 @@ const KEYS = {
     FREE_TRIES: 'free_tries',
     LAST_RECEIPT: 'last_receipt',
     SUBSCRIPTION_EXPIRY: 'subscription_expiry',
+    CACHED_PRODUCTS: 'cached_products',
+    LAST_VALIDATION: 'last_validation',
 };
 
 export type FeatureType = 'humanizer' | 'paraphrase' | 'plagiarism';
@@ -49,8 +55,12 @@ export class SubscriptionService {
             await RNIap.initConnection();
             console.log('✅ IAP Connection initialized');
 
-            // Check current subscription status
+            // Check current subscription status with validation
             await this.checkSubscriptionStatus();
+
+            // ✅ NEW: Fetch subscription products early
+            console.log('📦 Pre-fetching subscription products...');
+            await this.getSubscriptionProducts();
 
             // Set up purchase listeners
             this.setupPurchaseListeners();
@@ -122,6 +132,17 @@ export class SubscriptionService {
     }
 
     /**
+     * Check if subscription should be validated (once per day)
+     */
+    private static shouldValidate(): boolean {
+        const lastValidation = storage.getNumber(KEYS.LAST_VALIDATION) || 0;
+        const now = Date.now();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+
+        return (now - lastValidation) > oneDayMs;
+    }
+
+    /**
      * Check current subscription status with Apple
      */
     static async checkSubscriptionStatus(): Promise<boolean> {
@@ -142,19 +163,33 @@ export class SubscriptionService {
                     : latestPurchase.transactionId;
 
                 if (receipt) {
-                    // Validate receipt
-                    const isValid = await this.validateReceipt(receipt);
+                    // ✅ NEW: Only validate if needed (once per day)
+                    if (this.shouldValidate()) {
+                        console.log('🔄 Validating subscription with server...');
+                        const isValid = await this.validateReceipt(receipt);
 
-                    if (isValid) {
+                        if (isValid) {
+                            storage.set(KEYS.IS_PREMIUM, true);
+                            storage.set(KEYS.LAST_RECEIPT, receipt);
+                            storage.set(KEYS.LAST_VALIDATION, Date.now());
+
+                            // Mark trial as used if yearly plan
+                            if (latestPurchase.productId === PRODUCT_IDS.YEARLY) {
+                                storage.set(KEYS.TRIAL_USED, true);
+                            }
+
+                            console.log('✅ Subscription validated and active');
+                            return true;
+                        } else {
+                            storage.set(KEYS.IS_PREMIUM, false);
+                            console.log('❌ Subscription validation failed');
+                            return false;
+                        }
+                    } else {
+                        // Trust existing status if validated recently
                         storage.set(KEYS.IS_PREMIUM, true);
                         storage.set(KEYS.LAST_RECEIPT, receipt);
-
-                        // Mark trial as used if yearly plan
-                        if (latestPurchase.productId === PRODUCT_IDS.YEARLY) {
-                            storage.set(KEYS.TRIAL_USED, true);
-                        }
-
-                        console.log('✅ User has active premium subscription');
+                        console.log('✅ Subscription active (recently validated)');
                         return true;
                     }
                 }
@@ -177,8 +212,17 @@ export class SubscriptionService {
         try {
             console.log('🔐 Validating receipt with backend server...');
 
+            // Get validate receipt URL from API config
+            const { ApiConfigService } = require('../utils/storage');
+            const apiConfig = ApiConfigService.getApiConfig();
+
+            if (!apiConfig || !apiConfig.validate_receipt_URL) {
+                console.error('❌ Validate receipt URL not configured');
+                return false;
+            }
+
             // Call backend API for server-side validation
-            const response = await fetch('http://192.168.10.8/api/humanizer3in1/validate-receipt', {
+            const response = await fetch(apiConfig.validate_receipt_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -337,6 +381,127 @@ export class SubscriptionService {
      */
     static getProductIds() {
         return PRODUCT_IDS;
+    }
+
+    /**
+     * Fetch subscription products from App Store
+     * Returns product details including pricing, currency, and free trial info
+     */
+    static async getSubscriptionProducts(): Promise<any[]> {
+        try {
+            console.log('📦 Fetching subscription products from App Store...');
+
+            // Only works on iOS
+            if (Platform.OS !== 'ios') {
+                console.log('⚠️ Product fetching only available on iOS');
+                return [];
+            }
+
+            // ✅ NEW: Check cache first
+            const cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
+            if (cachedData) {
+                try {
+                    const { products, timestamp } = JSON.parse(cachedData);
+                    const age = Date.now() - timestamp;
+                    const cacheValidMs = 24 * 60 * 60 * 1000; // 24 hours
+
+                    if (age < cacheValidMs) {
+                        console.log('✅ Using cached products (age:', Math.floor(age / 1000 / 60), 'minutes)');
+                        return products;
+                    } else {
+                        console.log('⏰ Cache expired, fetching fresh products...');
+                    }
+                } catch (parseError) {
+                    console.error('❌ Error parsing cached products:', parseError);
+                }
+            }
+
+            // Fetch fresh products from App Store
+            const products = await RNIap.fetchProducts({
+                skus: [
+                    PRODUCT_IDS.WEEKLY,
+                    PRODUCT_IDS.MONTHLY,
+                    PRODUCT_IDS.YEARLY,
+                ],
+            });
+
+            if (!products || products.length === 0) {
+                console.log('⚠️ No products fetched');
+                return [];
+            }
+
+            console.log('✅ Fetched products:', products.length);
+            products.forEach((product: any) => {
+                console.log(`  - ${product.productId}: ${product.localizedPrice}`);
+            });
+
+            // ✅ NEW: Cache the products
+            storage.set(KEYS.CACHED_PRODUCTS, JSON.stringify({
+                products: products,
+                timestamp: Date.now(),
+            }));
+            console.log('💾 Products cached for 24 hours');
+
+            return products as any[];
+        } catch (error) {
+            console.error('❌ Error fetching subscription products:', error);
+
+            // ✅ NEW: Return cached products as fallback
+            const cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
+            if (cachedData) {
+                try {
+                    const { products } = JSON.parse(cachedData);
+                    console.log('⚠️ Using stale cache as fallback');
+                    return products;
+                } catch {
+                    return [];
+                }
+            }
+
+            return [];
+        }
+    }
+
+    /**
+     * Count words in text
+     */
+    private static countWords(text: string): number {
+        if (!text || text.trim().length === 0) return 0;
+
+        // Remove extra whitespace and split by spaces
+        return text.trim().split(/\s+/).length;
+    }
+
+    /**
+     * Check if text exceeds word limit for free users
+     * Returns { allowed: boolean, wordCount: number, limit: number }
+     */
+    static checkWordLimit(text: string): {
+        allowed: boolean;
+        wordCount: number;
+        limit: number;
+    } {
+        // Premium users have no limit
+        if (this.isPremium()) {
+            return { allowed: true, wordCount: 0, limit: -1 };
+        }
+
+        // Count words in text
+        const wordCount = this.countWords(text);
+
+        return {
+            allowed: wordCount <= FREE_USER_WORD_LIMIT,
+            wordCount,
+            limit: FREE_USER_WORD_LIMIT,
+        };
+    }
+
+    /**
+     * Get word limit for current user
+     * Returns -1 for premium users (unlimited), or the limit for free users
+     */
+    static getWordLimit(): number {
+        return this.isPremium() ? -1 : FREE_USER_WORD_LIMIT;
     }
 
     /**

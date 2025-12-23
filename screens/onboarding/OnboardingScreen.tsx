@@ -19,6 +19,8 @@ import TickVector from '../../assets/vectors/tick_vector.svg';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SubscriptionService } from '../../services/SubscriptionService';
+import { StorageService } from '../../utils/storage';
 
 const height = Dimensions.get('window').height;
 type OnboardingNavProp = NativeStackNavigationProp<
@@ -61,7 +63,22 @@ const OnboardingScreen: React.FC = () => {
       setCurrentStep(prev => prev + 1);
     } else {
       console.log('Finished Onboarding!');
-      navigation.navigate('MainTabs');
+      
+      // Mark onboarding as completed
+      StorageService.setOnboardingCompleted();
+      
+      // Check if user is premium
+      const isPremium = SubscriptionService.isPremium();
+      
+      if (isPremium) {
+        // Premium user - go directly to home
+        console.log('✅ Premium user - navigating to home');
+        navigation.navigate('MainTabs');
+      } else {
+        // Non-premium user - show paywall first
+        console.log('💰 Non-premium user - showing paywall');
+        navigation.navigate('Paywall');
+      }
     }
   };
 

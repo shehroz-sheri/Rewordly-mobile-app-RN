@@ -21,6 +21,7 @@ interface ApiConfigContextType {
   aiDetectorIosUrl: string | null;
   plagiarismCheckerAndroidUrl: string | null;
   plagiarismCheckerIosUrl: string | null;
+  validateReceiptUrl: string | null;
   isLoading: boolean;
   error: string | null;
   refetchConfig: () => Promise<void>;
@@ -36,6 +37,7 @@ const ApiConfigContext = createContext<ApiConfigContextType>({
   aiDetectorIosUrl: null,
   plagiarismCheckerAndroidUrl: null,
   plagiarismCheckerIosUrl: null,
+  validateReceiptUrl: null,
   isLoading: true,
   error: null,
   refetchConfig: async () => {},
@@ -57,6 +59,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
   const [aiDetectorIosUrl, setAiDetectorIosUrl] = useState<string | null>(null);
   const [plagiarismCheckerAndroidUrl, setPlagiarismCheckerAndroidUrl] = useState<string | null>(null);
   const [plagiarismCheckerIosUrl, setPlagiarismCheckerIosUrl] = useState<string | null>(null);
+  const [validateReceiptUrl, setValidateReceiptUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +110,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         setAiDetectorIosUrl(cachedConfig.ai_detector_ios_url || null);
         setPlagiarismCheckerAndroidUrl(cachedConfig.plagiarism_checker_android_url || null);
         setPlagiarismCheckerIosUrl(cachedConfig.plagiarism_checker_ios_url || null);
+        setValidateReceiptUrl(cachedConfig.validate_receipt_URL || null);
         setIsLoading(false);
         return;
       }
@@ -127,6 +131,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         setAiDetectorIosUrl(freshConfig.ai_detector_ios_url || null);
         setPlagiarismCheckerAndroidUrl(freshConfig.plagiarism_checker_android_url || null);
         setPlagiarismCheckerIosUrl(freshConfig.plagiarism_checker_ios_url || null);
+        setValidateReceiptUrl(freshConfig.validate_receipt_URL || null);
         console.log('API config fetched and cached successfully');
       } else {
         setError('Failed to fetch API configuration');
@@ -164,6 +169,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         aiDetectorIosUrl,
         plagiarismCheckerAndroidUrl,
         plagiarismCheckerIosUrl,
+        validateReceiptUrl,
         isLoading,
         error,
         refetchConfig,

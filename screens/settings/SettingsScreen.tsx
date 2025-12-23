@@ -13,11 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../../components/settingsItem/SettingsItem';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
 import RateUsModal from '../../components/rateUsModal/RateUsModal';
+import { useNavigation } from '@react-navigation/native';
+import { SubscriptionService } from '../../services/SubscriptionService';
 import { useState } from 'react';
 import JoinDiscordModal from '../../components/joinDiscordModal/JoinDiscordModal';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-import { useNavigation } from '@react-navigation/native';
 
 type IconSet = 'MaterialDesignIcons' | 'Ionicons';
 
@@ -36,13 +37,43 @@ type SettingsNavProp = NativeStackNavigationProp<
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsNavProp>();
+  const [showRateModal, setShowRateModal] = useState<boolean>(false);
+  const [showDiscordModal, setShowDiscordModal] = useState<boolean>(false);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
+
+  const handleRestorePurchases = async () => {
+    setIsRestoring(true);
+    try {
+      const restored = await SubscriptionService.restorePurchases();
+      
+      if (restored) {
+        Alert.alert(
+          'Success!',
+          'Your purchases have been restored. You now have premium access!'
+        );
+      } else {
+        Alert.alert(
+          'No Purchases Found',
+          "We couldn't find any previous purchases for this Apple ID."
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to restore purchases. Please try again.'
+      );
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+  
   const accountGroup: SettingsOption[] = [
     {
       id: '1',
       iconSet: 'Ionicons',
       iconName: 'refresh',
       label: 'Restore Purchase',
-      onPress: () => console.log('Restore Purchase'),
+      onPress: handleRestorePurchases,
     },
     {
       id: '2',
@@ -149,8 +180,7 @@ const SettingsScreen: React.FC = () => {
     </View>
   );
 
-  const [showRateModal, setShowRateModal] = useState<boolean>(false);
-  const [showDiscordModal, setShowDiscordModal] = useState<boolean>(false);
+
 
   const handleRateSubmit = (rating: number) => {
     console.log('Rating submitted:', rating);
