@@ -8,6 +8,7 @@ import {
   Platform,
   ToastAndroid,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../../components/settingsItem/SettingsItem';
@@ -45,7 +46,7 @@ const SettingsScreen: React.FC = () => {
     setIsRestoring(true);
     try {
       const restored = await SubscriptionService.restorePurchases();
-      
+
       if (restored) {
         Alert.alert(
           'Success!',
@@ -66,7 +67,44 @@ const SettingsScreen: React.FC = () => {
       setIsRestoring(false);
     }
   };
-  
+
+  const handleManageSubscription = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        // Open iOS App Store account subscriptions page
+        const url = 'https://apps.apple.com/account/subscriptions';
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert(
+            'Unable to Open',
+            'Please open the App Store app and go to your account to manage subscriptions.'
+          );
+        }
+      } else if (Platform.OS === 'android') {
+        // Open Android Play Store subscriptions page for this app
+        const packageName = 'com.rewordly'; // Replace with your actual package name
+        const url = `https://play.google.com/store/account/subscriptions?package=${packageName}`;
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert(
+            'Unable to Open',
+            'Please open the Play Store app and go to Subscriptions to manage your subscription.'
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      Alert.alert(
+        'Error',
+        'Unable to open subscription management. Please try again.'
+      );
+    }
+  };
+
   const accountGroup: SettingsOption[] = [
     {
       id: '1',
@@ -80,18 +118,18 @@ const SettingsScreen: React.FC = () => {
       iconSet: 'MaterialDesignIcons',
       iconName: 'credit-card-settings-outline',
       label: 'Manage Subscription',
-      onPress: () => console.log('Manage Subscription'),
+      onPress: handleManageSubscription,
     },
   ];
 
   const interactionGroup: SettingsOption[] = [
-    {
-      id: '3',
-      iconSet: 'Ionicons',
-      iconName: 'language-outline',
-      label: 'Language',
-      onPress: () => navigation.navigate('Language'),
-    },
+    // {
+    //   id: '3',
+    //   iconSet: 'Ionicons',
+    //   iconName: 'language-outline',
+    //   label: 'Language',
+    //   onPress: () => navigation.navigate('Language'),
+    // },
     {
       id: '4',
       iconSet: 'Ionicons',
@@ -182,9 +220,66 @@ const SettingsScreen: React.FC = () => {
 
 
 
-  const handleRateSubmit = (rating: number) => {
+  const handleRateSubmit = async (rating: number) => {
     console.log('Rating submitted:', rating);
     setShowRateModal(false);
+
+    if (rating >= 4) {
+      // High rating (4-5 stars) - Direct to store for public review
+      try {
+        if (Platform.OS === 'ios') {
+          // iOS App Store rating URL - Replace with your actual App Store ID
+          const appStoreId = 'YOUR_APP_STORE_ID'; // e.g., '123456789'
+          const url = `https://apps.apple.com/app/id${appStoreId}?action=write-review`;
+          const canOpen = await Linking.canOpenURL(url);
+          if (canOpen) {
+            await Linking.openURL(url);
+          } else {
+            Alert.alert(
+              'Thank You!',
+              'We appreciate your positive feedback! Please rate us on the App Store.'
+            );
+          }
+        } else if (Platform.OS === 'android') {
+          // Android Play Store rating URL
+          const packageName = 'com.rewordly';
+          const url = `market://details?id=${packageName}`;
+          const canOpen = await Linking.canOpenURL(url);
+          if (canOpen) {
+            await Linking.openURL(url);
+          } else {
+            // Fallback to browser if Play Store app is not available
+            const webUrl = `https://play.google.com/store/apps/details?id=${packageName}`;
+            await Linking.openURL(webUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error opening store for rating:', error);
+        Alert.alert(
+          'Thank You!',
+          'We appreciate your positive feedback!'
+        );
+      }
+    } else {
+      // Low rating (1-3 stars) - Show feedback message
+      Alert.alert(
+        'Thank You for Your Feedback',
+        'We appreciate your rating. If you\'re facing any issues, please contact us so we can help improve your experience.',
+        [
+          {
+            text: 'OK',
+            style: 'cancel',
+          },
+          {
+            text: 'Contact Us',
+            onPress: () => {
+              // You can implement contact functionality here
+              console.log('Contact Us pressed');
+            },
+          },
+        ]
+      );
+    }
   };
 
   return (

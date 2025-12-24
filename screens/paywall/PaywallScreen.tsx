@@ -12,6 +12,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -169,7 +170,14 @@ const PaywallScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#E8F5E9" />
+
+      {/* Gradient Background - Professional Smooth Gradient */}
+      <LinearGradient
+        colors={['#E8F5E9', '#F1F8E9', '#FAFAFA', '#FFFFFF']}
+        locations={[0, 0.3, 0.6, 1]}
+        style={styles.gradientBackground}
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -183,28 +191,23 @@ const PaywallScreen: React.FC = () => {
 
       {/* Content - Title at top, everything else at bottom */}
       <View style={styles.content}>
-        {/* Title Section - Top */}
-        <View style={styles.titleSection}>
-          {/* Crown Image - Above Title */}
+        <View style={styles.crownContainer}>
           <Image
             source={require('../../assets/images/crown.png')}
             style={styles.crownImage}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Unlock Premium</Text>
-          <Text style={styles.subtitle}>Get unlimited access to all features</Text>
         </View>
-
-        {/* Spacer - pushes content to bottom */}
-        <View style={styles.spacer} />
-
-        {/* Scrollable Section - Key Features & Plans */}
         <ScrollView
           style={styles.scrollSection}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Unlock Premium</Text>
+            <Text style={styles.subtitle}>Get unlimited access to all features</Text>
+          </View>
           {/* Key Features - Compact */}
           <View style={styles.featuresSection}>
             <FeatureRow icon="infinite" text="Unlimited AI Requests Daily" />
@@ -266,6 +269,7 @@ const PaywallScreen: React.FC = () => {
           {/* Subscribe Button */}
           <TouchableOpacity
             style={[styles.subscribeButton, loading && styles.buttonDisabled]}
+            activeOpacity={0.8}
             onPress={() =>
               handlePurchase(
                 selectedPlan === 'yearly'
@@ -333,11 +337,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.light,
   },
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
+    zIndex: 10,
   },
   closeButton: {
     padding: SPACING.xs,
@@ -348,24 +360,34 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    maxHeight: '35%',
+    marginBottom: SPACING.sm
   },
-  title: {
-    fontSize: 28,
-    fontFamily: FONTS.sora.bold,
-    color: COLORS.dark,
+  crownContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: Dimensions.get('window').height < 700 ? 50 : Dimensions.get('window').height < 800 ? 75 : 100,
+    maxHeight: Dimensions.get('window').height < 700 ? 90 : Dimensions.get('window').height < 800 ? 125 : 160,
   },
   crownImage: {
-    width: Dimensions.get('window').height < 700 ? 70 : 100,
-    height: Dimensions.get('window').height < 700 ? 70 : 100,
-    marginBottom: SPACING.xs,
+    width: '100%',
+    height: '100%',
+    // maxWidth: Dimensions.get('window').height < 700 ? 180 : Dimensions.get('window').height < 800 ? 220 : 280,
+  },
+  title: {
+    fontSize: 32,
+    fontFamily: FONTS.sora.bold,
+    color: COLORS.dark,
+    marginTop: SPACING.xs,
   },
   subtitle: {
     fontSize: 14,
-    fontFamily: FONTS.sora.regular,
+    fontFamily: FONTS.dmSans.regular,
     color: COLORS.gray,
-  },
-  spacer: {
-    flex: 1,
   },
   scrollSection: {
     flexShrink: 1,
@@ -376,8 +398,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xs,
   },
   fixedBottomSection: {
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   featuresSection: {
     marginBottom: SPACING.lg,
