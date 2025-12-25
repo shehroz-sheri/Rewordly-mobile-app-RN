@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   labelText: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: FONTS.dmSans.regular,
     color: COLORS.dark,
   },
