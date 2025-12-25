@@ -47,7 +47,14 @@ const RootNavigator: React.FC = () => {
       />
       <Stack.Screen name="Result" component={ResultScreen} />
       <Stack.Screen name="HistoryResult" component={HistoryResultScreen} />
-      <Stack.Screen name="Paywall" component={PaywallScreen} />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
 
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
     </Stack.Navigator>

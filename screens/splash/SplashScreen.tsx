@@ -21,11 +21,24 @@ const SplashScreen: React.FC = () => {
     const timer = setTimeout(() => {
       // Check if user has completed onboarding
       const hasCompletedOnboarding = StorageService.hasCompletedOnboarding();
-      
+
       if (hasCompletedOnboarding) {
-        // Returning user - go directly to home
-        console.log('🔄 Returning user - navigating to home');
-        navigation.navigate('MainTabs');
+        // Returning user - check premium status
+        console.log('🔄 Returning user - checking premium status');
+
+        // Import SubscriptionService dynamically to avoid circular dependencies
+        const { SubscriptionService } = require('../../services/SubscriptionService');
+        const isPremium = SubscriptionService.isPremium();
+
+        if (isPremium) {
+          // Premium user - go directly to home
+          console.log('✅ Premium user - navigating to home');
+          navigation.navigate('MainTabs');
+        } else {
+          // Non-premium user - show paywall
+          console.log('💎 Non-premium user - showing paywall');
+          navigation.navigate('Paywall');
+        }
       } else {
         // New user - show onboarding
         console.log('🆕 New user - showing onboarding');
@@ -78,7 +91,7 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
   },
   text: {
-    fontSize: 20,
+    fontSize: 18,
     color: COLORS.dark,
     fontFamily: FONTS.dmSans.medium,
   },

@@ -37,10 +37,11 @@ type SettingsNavProp = NativeStackNavigationProp<
 >;
 
 const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation<SettingsNavProp>();
+  // const navigation = useNavigation<SettingsNavProp>();
   const [showRateModal, setShowRateModal] = useState<boolean>(false);
   const [showDiscordModal, setShowDiscordModal] = useState<boolean>(false);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
+  const isPremium = SubscriptionService.isPremium();
 
   const handleRestorePurchases = async () => {
     setIsRestoring(true);
@@ -68,43 +69,6 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      if (Platform.OS === 'ios') {
-        // Open iOS App Store account subscriptions page
-        const url = 'https://apps.apple.com/account/subscriptions';
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert(
-            'Unable to Open',
-            'Please open the App Store app and go to your account to manage subscriptions.'
-          );
-        }
-      } else if (Platform.OS === 'android') {
-        // Open Android Play Store subscriptions page for this app
-        const packageName = 'com.rewordly'; // Replace with your actual package name
-        const url = `https://play.google.com/store/account/subscriptions?package=${packageName}`;
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert(
-            'Unable to Open',
-            'Please open the Play Store app and go to Subscriptions to manage your subscription.'
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error opening subscription management:', error);
-      Alert.alert(
-        'Error',
-        'Unable to open subscription management. Please try again.'
-      );
-    }
-  };
-
   const accountGroup: SettingsOption[] = [
     {
       id: '1',
@@ -112,13 +76,6 @@ const SettingsScreen: React.FC = () => {
       iconName: 'refresh',
       label: 'Restore Purchase',
       onPress: handleRestorePurchases,
-    },
-    {
-      id: '2',
-      iconSet: 'MaterialDesignIcons',
-      iconName: 'credit-card-settings-outline',
-      label: 'Manage Subscription',
-      onPress: handleManageSubscription,
     },
   ];
 
@@ -294,7 +251,7 @@ const SettingsScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {renderGroup(accountGroup)}
+        {!isPremium && renderGroup(accountGroup)}
         {renderGroup(interactionGroup)}
         {renderGroup(legalGroup)}
       </ScrollView>

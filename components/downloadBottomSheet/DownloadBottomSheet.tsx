@@ -10,6 +10,7 @@ import {
   Platform,
   ToastAndroid,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
@@ -54,95 +55,111 @@ const DownloadBottomSheet: React.FC<DownloadBottomSheetProps> = ({
     icon: string;
     label: string;
   }[] = [
-    { format: 'PDF', icon: 'file-pdf-box', label: 'PDF' },
-    { format: 'DOCX', icon: 'file-word-box', label: 'DOCX' },
-    { format: 'TXT', icon: 'card-text', label: 'TXT' },
-  ];
+      { format: 'PDF', icon: 'file-pdf-box', label: 'PDF' },
+      { format: 'DOCX', icon: 'file-word-box', label: 'DOCX' },
+      { format: 'TXT', icon: 'card-text', label: 'TXT' },
+    ];
 
   if (!isVisible) {
     return null;
   }
 
   return (
-    <Modal
-      transparent={true}
-      visible={isVisible}
-      onRequestClose={onClose}
-      animationType="slide"
-    >
-      <View style={styles.overlay}>
-        <View style={styles.bottomSheetContainer}>
-          <View style={styles.header}>
-            <Text style={styles.title}>📥 &nbsp; Download Result</Text>
+    <>
+      <View style={[styles.clrOverlay, !isVisible && { display: 'none' }]}></View>
+      <Modal
+        transparent={true}
+        visible={isVisible}
+        onRequestClose={onClose}
+        animationType="slide"
+      >
+        <View style={styles.overlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%' }}
+          >
+            <View style={styles.bottomSheetContainer}>
+              <View style={styles.header}>
+                <Text style={styles.title}>📥 &nbsp; Download Result</Text>
 
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.8}>
-              <Ionicons name="close" size={22} color={COLORS.dark} />
-            </TouchableOpacity>
-          </View>
-          {/* File Name Input */}
-          <Text style={styles.label}>File Name:</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter file name"
-            value={filename}
-            onChangeText={setFilename}
-            placeholderTextColor={COLORS.secondary}
-          />
-          {/* Format Options */}
-          <Text style={[styles.label, { marginTop: SPACING.md }]}>
-            Select Format:
-          </Text>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.8}>
+                  <Ionicons name="close" size={22} color={COLORS.dark} />
+                </TouchableOpacity>
+              </View>
+              {/* File Name Input */}
+              <Text style={styles.label}>File Name:</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter file name"
+                value={filename}
+                onChangeText={setFilename}
+                placeholderTextColor={COLORS.secondary}
+              />
+              {/* Format Options */}
+              <Text style={[styles.label, { marginTop: SPACING.md }]}>
+                Select Format:
+              </Text>
 
-          <View style={styles.formatContainer}>
-            {formats.map(item => (
+              <View style={styles.formatContainer}>
+                {formats.map(item => (
+                  <TouchableOpacity
+                    key={item.format}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.formatOption,
+                      selectedFormat === item.format && styles.formatOptionSelected,
+                    ]}
+                    onPress={() => setSelectedFormat(item.format)}
+                  >
+                    <MaterialDesignIcons
+                      name={item.icon as any}
+                      size={20}
+                      color={COLORS.dark}
+                    />
+
+                    <Text
+                      style={[
+                        styles.formatText,
+                        selectedFormat === item.format && styles.formatTextSelected,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {/* Download Button */}
               <TouchableOpacity
-                key={item.format}
-                activeOpacity={0.7}
-                style={[
-                  styles.formatOption,
-                  selectedFormat === item.format && styles.formatOptionSelected,
-                ]}
-                onPress={() => setSelectedFormat(item.format)}
+                style={styles.downloadButton}
+                onPress={handleDownloadPress}
+                activeOpacity={0.8}
               >
-                <MaterialDesignIcons
-                  name={item.icon as any}
-                  size={24}
-                  color={COLORS.dark}
-                />
-
-                <Text
-                  style={[
-                    styles.formatText,
-                    selectedFormat === item.format && styles.formatTextSelected,
-                  ]}
-                >
-                  {item.label}
+                <Text style={styles.downloadButtonText}>
+                  Download as {selectedFormat}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-          {/* Download Button */}
-          <TouchableOpacity
-            style={styles.downloadButton}
-            onPress={handleDownloadPress}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.downloadButtonText}>
-              Download as {selectedFormat}
-            </Text>
-          </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+    </>
   );
 };
 
 // --- Bottom Sheet Styles ---
 
 const styles = StyleSheet.create({
+  clrOverlay: {
+    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   bottomSheetContainer: {
@@ -194,15 +211,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.xs_sm,
     alignItems: 'center',
-    paddingVertical: SPACING.sm_md,
+    paddingVertical: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.offWhite,
     borderRadius: SPACING.sm,
     backgroundColor: COLORS.offWhite + '50',
   },
   formatOptionSelected: {
-    borderColor: COLORS.dark,
-    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    backgroundColor: '#E6F9C6',
   },
   formatText: {
     fontSize: 14,
@@ -220,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   downloadButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: FONTS.sora.semiBold,
     color: COLORS.dark,
   },

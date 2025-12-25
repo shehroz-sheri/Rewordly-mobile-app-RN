@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
-import { 
-  View, 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
-  Platform, 
-  UIManager, 
-  LayoutAnimation 
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Platform,
+  UIManager,
+  LayoutAnimation,
+  Dimensions
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -34,8 +35,8 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
             options.tabBarLabel !== undefined
               ? options.tabBarLabel
               : options.title !== undefined
-              ? options.title
-              : route.name;
+                ? options.title
+                : route.name;
 
           const isFocused = state.index === index;
 
@@ -73,22 +74,22 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
               accessibilityLabel={options.tabBarAccessibilityLabel}
               onPress={onPress}
               style={[
-                styles.tabButton, 
+                styles.tabButton,
                 isFocused ? styles.tabButtonFocused : null
               ]}
               activeOpacity={0.8}
             >
-              <Ionicons 
-                name={iconName as any} 
-                size={22} 
+              <Ionicons
+                name={iconName as any}
+                size={20}
                 color={isFocused ? COLORS.dark : COLORS.secondary} // Invert color for active state
               />
-              
+
               {/* Only show label if focused (Pill Design) */}
               {isFocused && (
-                <Text 
-                  numberOfLines={1} 
-                  style={[styles.tabLabel, { color: COLORS.dark }]}
+                <Text
+                  numberOfLines={1}
+                  style={[styles.tabLabel, isFocused ? { color: COLORS.dark } : { color: COLORS.light }]}
                 >
                   {String(label)}
                 </Text>
@@ -109,29 +110,31 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // We don't put background here, we put it on the floating child
+    backgroundColor: COLORS.dark,
+    borderTopLeftRadius: 20, // Rounded top corners
+    borderTopRightRadius: 20, // Rounded top corners
   },
   floatingTabBar: {
     flexDirection: 'row',
-    backgroundColor: COLORS.dark, 
-    width: '80%', // Controls the width of the floating bar
-    // height: 60,
-    borderRadius: 35, // High border radius for pill shape
-    paddingHorizontal: SPACING.xs_sm,
-    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.dark,
+    width: '100%', // Full width instead of 80%
+    maxWidth: Dimensions.get('window').width > 380 ? '85%' : '80%',
+    borderTopLeftRadius: 20, // Rounded top corners
+    borderTopRightRadius: 20, // Rounded top corners
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm_md,
     justifyContent: 'space-between',
     alignItems: 'center',
-    
-    // --- Shadow for Floating Effect ---
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-    
-    marginBottom: 20, // Distance from bottom of screen
+    alignSelf: 'center',
+
+    // Remove shadow for non-floating design
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+
+    marginBottom: 0, // No margin for non-floating
   },
   tabButton: {
     flex: 1,
@@ -142,15 +145,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // Align icon and text horizontally
   },
   tabButtonFocused: {
-    flex: 2, // Active tab takes up more space
+    // flex: 2, // Active tab takes up more space
     backgroundColor: COLORS.primary, // The "Pill" background color
     marginHorizontal: 5,
   },
   tabLabel: {
     fontSize: 12,
     fontFamily: FONTS.sora.medium,
-    marginLeft: 8, // Space between icon and text
-    fontWeight: '600',
+    marginLeft: 6,
   },
 });
 

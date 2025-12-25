@@ -139,7 +139,7 @@ const HomeScreen: React.FC = () => {
       console.log(`ℹ️ No URL configured for ${item.title} on ${Platform.OS}`);
       if (Platform.OS === 'android') {
         ToastAndroid.show(
-          `${item.title} - Coming Soon! 🚀`,
+          `${item.title} - Coming Soon!`,
           ToastAndroid.LONG,
         );
       } else {
@@ -379,14 +379,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    paddingVertical: 6,
+    borderRadius: 24,
+    paddingVertical: 4,
     paddingHorizontal: 12,
   },
   proButtonText: {
     color: COLORS.dark,
-    fontFamily: FONTS.dmSans.bold,
-    fontSize: 16,
+    fontFamily: FONTS.sora.bold,
+    fontSize: 15,
+    paddingBottom: 2,
   },
   crownIcon: {
     position: 'absolute',
@@ -401,14 +402,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionLabel: {
-    fontFamily: FONTS.sora.semiBold,
-    fontSize: 20,
-    marginBottom: 6,
+    fontFamily: FONTS.sora.bold,
+    fontSize: 18,
+    marginBottom: 4,
   },
   sectionDesc: {
-    fontSize: 14,
-    fontFamily: FONTS.dmSans.regular,
-    opacity: 0.6,
+    fontSize: 13,
+    fontFamily: FONTS.dmSans.medium,
+    opacity: 0.5,
   },
   gridContainer: {
     paddingHorizontal: SPACING.lg,
@@ -421,7 +422,7 @@ const styles = StyleSheet.create({
   },
   squareWidget: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: SPACING.xxl,
     padding: SPACING.md,
     justifyContent: 'space-between',
   },
@@ -433,23 +434,23 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   widgetTitle: {
     fontSize: 18,
     fontFamily: FONTS.sora.bold,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   widgetSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: FONTS.dmSans.regular,
-    lineHeight: 14,
+    lineHeight: 15.5,
   },
   wideWidget: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 30,
     padding: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   externalCard: {
     flex: 1,
     backgroundColor: '#FAFAFA',
-    borderRadius: SPACING.lg,
+    borderRadius: 28,
     padding: 14,
     borderWidth: 1,
     borderColor: '#EEEEEE',
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.light,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 7,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },

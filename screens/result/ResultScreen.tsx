@@ -387,10 +387,10 @@ const styles = StyleSheet.create({
     paddingRight: SPACING.md,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: FONTS.dmSans.semiBold,
     color: COLORS.dark,
-    marginTop: SPACING.sm,
+    marginTop: SPACING.xs,
     textAlign: 'center',
   },
   // --- Result Display ---

@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DocumentPickerResponse } from '@react-native-documents/picker';
@@ -23,6 +24,8 @@ import { StorageService } from '../../utils/storage';
 import { FileReader } from '../../utils/fileReader';
 import { useApiConfig } from '../../context/ApiConfigContext';
 import { SubscriptionService } from '../../services/SubscriptionService';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Renamed functional component
 const PlagiarismRemoverScreen: React.FC = () => {
@@ -64,15 +67,6 @@ const PlagiarismRemoverScreen: React.FC = () => {
       return;
     }
 
-    const MAX_WORDS = 5000;
-    if (wordCount > MAX_WORDS) {
-      Alert.alert(
-        'Word Limit Exceeded',
-        `The system processes up to ${MAX_WORDS} words at a time. Please reduce your input.`,
-      );
-      return;
-    }
-
     // ✅ SUBSCRIPTION CHECK
     const isPremium = SubscriptionService.isPremium();
 
@@ -81,15 +75,8 @@ const PlagiarismRemoverScreen: React.FC = () => {
       const hasFreeTries = SubscriptionService.hasFreeTries('plagiarism');
 
       if (!hasFreeTries) {
-        // No premium, no free tries → Show paywall
-        Alert.alert(
-          'Premium Feature',
-          'You\'ve used your free try. Subscribe to get unlimited access!',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Subscribe', onPress: () => navigation.navigate('Paywall') },
-          ]
-        );
+        // No free tries left - navigate directly to paywall
+        navigation.navigate('Paywall');
         return;
       }
 
@@ -181,6 +168,28 @@ const PlagiarismRemoverScreen: React.FC = () => {
 
   const handleClearInput = () => {
     setInputText('');
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const clipboardContent = await Clipboard.getString();
+      if (clipboardContent && clipboardContent.trim().length > 0) {
+        setInputText(clipboardContent);
+      } else {
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('Clipboard is empty', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Clipboard Empty', 'No text found in clipboard');
+        }
+      }
+    } catch (error) {
+      console.error('Error reading clipboard:', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to paste', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Error', 'Failed to paste from clipboard');
+      }
+    }
   };
 
   const handleFileSelected = async (file: DocumentPickerResponse) => {
@@ -363,9 +372,13 @@ const PlagiarismRemoverScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={20}
+        showsVerticalScrollIndicator={false}
       >
         {/* Removed Option Selector component call */}
 
@@ -382,6 +395,18 @@ const PlagiarismRemoverScreen: React.FC = () => {
             editable={!isLoading}
           />
 
+          {/* Centered Paste Button - Only show when input is empty */}
+          {inputText.length === 0 && !isLoading && (
+            <TouchableOpacity
+              style={styles.pasteButtonCenter}
+              onPress={handlePasteFromClipboard}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="clipboard-outline" size={40} color={COLORS.dark} />
+              <Text style={styles.pasteButtonText}>Tap to Paste</Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.inputControls}>
             <Text style={styles.countText}>
               {wordCount} words / {charCount} chars
@@ -393,7 +418,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
             )}
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <View style={styles.footerContainer}>
         <View style={styles.actionRow}>
@@ -413,14 +438,10 @@ const PlagiarismRemoverScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.removeButton}
             onPress={handleRemovePlagiarism}
-            disabled={isLoading || wordCount === 0 || wordCount > 5000}
+            disabled={isLoading || wordCount === 0}
             activeOpacity={0.8}
           >
-            {isLoading ? (
-              <Text style={styles.removeButtonText}>Removing...</Text>
-            ) : (
-              <Text style={styles.removeButtonText}>Remove Plagiarism</Text>
-            )}
+            <Text style={styles.removeButtonText}>Remove Plagiarism</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -430,6 +451,14 @@ const PlagiarismRemoverScreen: React.FC = () => {
         onClose={() => setIsUploadModalVisible(false)}
         onFileSelect={handleFileSelected}
       />
+
+      {/* Full-Screen Loader Overlay */}
+      {isLoading && (
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loaderText}>Processing...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -487,7 +516,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONTS.dmSans.semiBold,
     color: COLORS.dark,
-    marginTop: SPACING.sm,
+    marginTop: SPACING.xs,
     textAlign: 'center',
   },
   // --- Input Area ---
@@ -528,6 +557,26 @@ const styles = StyleSheet.create({
     color: COLORS.tertiary,
     paddingHorizontal: SPACING.xs,
   },
+  pasteButtonCenter: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -47 }, { translateY: -50 }],
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: '#dfe0dbb3', // Light version of primary color
+    borderRadius: SPACING.lg,
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+  },
+  pasteButtonText: {
+    fontSize: 13,
+    fontFamily: FONTS.sora.medium,
+    color: COLORS.dark,
+    marginTop: SPACING.xs,
+  },
   // --- Footer/Action Buttons ---
   footerContainer: {
     paddingHorizontal: SPACING.lg,
@@ -555,6 +604,23 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     fontSize: 20,
+    fontFamily: FONTS.sora.semiBold,
+    color: COLORS.light,
+  },
+  loaderOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loaderText: {
+    marginTop: SPACING.md,
+    fontSize: 17,
     fontFamily: FONTS.sora.semiBold,
     color: COLORS.light,
   },

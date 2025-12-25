@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,11 +11,12 @@ import {
   ScrollView,
   Dimensions,
   Image,
+  BackHandler,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { SubscriptionService } from '../../services/SubscriptionService';
@@ -27,6 +28,26 @@ const PaywallScreen: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+
+  const handleClose = () => {
+    // Get the navigation state to check previous screen
+    const state = navigation.getState();
+    const routes = state.routes;
+    const currentIndex = state.index;
+
+    // Check if we came from Splash or Onboarding
+    if (currentIndex > 0) {
+      const previousRoute = routes[currentIndex - 1];
+      if (previousRoute.name === 'Splash' || previousRoute.name === 'Onboarding') {
+        // If coming from Splash or Onboarding, go to MainTabs
+        navigation.navigate('MainTabs');
+        return;
+      }
+    }
+
+    // Otherwise, go back to previous screen
+    navigation.goBack();
+  };
 
   const handlePurchase = async (productId: string) => {
     setLoading(true);
@@ -75,6 +96,20 @@ const PaywallScreen: React.FC = () => {
     fetchProducts();
   }, []);
 
+  // Handle Android hardware back button
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleClose();
+        return true; // Prevent default back behavior
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => backHandler.remove();
+    }, [])
+  );
+
   // Helper function to get product by plan type
   const getProduct = (planType: 'weekly' | 'monthly' | 'yearly'): any => {
     const productId = planType === 'yearly'
@@ -113,7 +148,7 @@ const PaywallScreen: React.FC = () => {
     }
 
     // Fallback prices
-    return planType === 'yearly' ? '$38.99'
+    return planType === 'yearly' ? '$35.99'
       : planType === 'monthly' ? '$12.99'
         : '$6.49';
   };
@@ -182,7 +217,7 @@ const PaywallScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('MainTabs')}
+          onPress={handleClose}
           style={styles.closeButton}
         >
           <Ionicons name="close" size={24} color={COLORS.dark} />
@@ -298,26 +333,26 @@ const PaywallScreen: React.FC = () => {
           {/* Restore & Links */}
           <View style={styles.linksRow}>
             <TouchableOpacity onPress={handleRestore} disabled={loading}>
-              <Text style={styles.linkText}>Restore</Text>
+              <Text style={styles.linkText}>Restore Purchase</Text>
             </TouchableOpacity>
             <Text style={styles.linkDivider}>•</Text>
             <TouchableOpacity onPress={handlePrivacyPolicy}>
-              <Text style={styles.linkText}>Privacy</Text>
+              <Text style={styles.linkText}>Privacy Policy</Text>
             </TouchableOpacity>
             <Text style={styles.linkDivider}>•</Text>
             <TouchableOpacity onPress={handleTerms}>
-              <Text style={styles.linkText}>Terms</Text>
+              <Text style={styles.linkText}>Terms of Use</Text>
             </TouchableOpacity>
           </View>
 
           {/* Terms Text */}
-          <Text style={styles.termsText}>
+          {/* <Text style={styles.termsText}>
             {selectedPlan === 'yearly'
               ? 'Free for 7 days, then $29.99/year. Auto-renews unless cancelled.'
               : selectedPlan === 'monthly'
                 ? 'Free for 3 days, then $9.99/month. Auto-renews unless cancelled.'
                 : 'Subscription renews at $4.99/week unless cancelled.'}
-          </Text>
+          </Text> */}
         </View>
       </View>
     </SafeAreaView>
@@ -358,6 +393,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: SPACING.lg,
   },
+  crownContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 75 : 100,
+    maxHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 125 : 160,
+  },
+  crownImage: {
+    width: '100%',
+    height: '100%',
+  },
   titleSection: {
     alignItems: 'center',
     flex: 1,
@@ -365,27 +412,14 @@ const styles = StyleSheet.create({
     maxHeight: '35%',
     marginBottom: SPACING.sm
   },
-  crownContainer: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: Dimensions.get('window').height < 700 ? 50 : Dimensions.get('window').height < 800 ? 75 : 100,
-    maxHeight: Dimensions.get('window').height < 700 ? 90 : Dimensions.get('window').height < 800 ? 125 : 160,
-  },
-  crownImage: {
-    width: '100%',
-    height: '100%',
-    // maxWidth: Dimensions.get('window').height < 700 ? 180 : Dimensions.get('window').height < 800 ? 220 : 280,
-  },
   title: {
-    fontSize: 32,
+    fontSize: Dimensions.get('window').height < 700 ? 28 : 32,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
     marginTop: SPACING.xs,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: Dimensions.get('window').height < 700 ? 12 : 14,
     fontFamily: FONTS.dmSans.regular,
     color: COLORS.gray,
   },
@@ -409,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs_sm,
   },
   featureText: {
-    fontSize: 14,
+    fontSize: Dimensions.get('window').height < 700 ? 12 : 13,
     fontFamily: FONTS.sora.medium,
     color: COLORS.dark,
     marginLeft: SPACING.sm,
@@ -474,21 +508,21 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   planName: {
-    fontSize: 17,
+    fontSize: Dimensions.get('window').height < 700 ? 15 : 17,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
   },
   trialText: {
-    fontSize: 12,
+    fontSize: Dimensions.get('window').height < 700 ? 11 : 12,
     fontFamily: FONTS.sora.medium,
     color: COLORS.gray,
-    marginTop: 2,
+    marginTop: 1,
   },
   planRight: {
     alignItems: 'flex-end',
   },
   strikePrice: {
-    fontSize: 14,
+    fontSize: Dimensions.get('window').height < 700 ? 12 : 13,
     marginBottom: -4,
     fontFamily: FONTS.sora.regular,
     color: '#9CA3AF',
@@ -499,12 +533,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   actualPrice: {
-    fontSize: 22,
+    fontSize: Dimensions.get('window').height < 700 ? 18 : 22,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
   },
   period: {
-    fontSize: 14,
+    fontSize: Dimensions.get('window').height < 700 ? 11 : 13,
     fontFamily: FONTS.sora.regular,
     color: '#6B7280',
     marginLeft: 2,
@@ -521,6 +555,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: SPACING.sm,
+    // Shadow for iOS
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    // Shadow for Android
+    elevation: 6,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -545,7 +586,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   linkText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: FONTS.sora.medium,
     color: COLORS.dark,
   },

@@ -14,7 +14,7 @@ const PRODUCT_IDS = {
 };
 
 // Free user limits
-const FREE_USER_WORD_LIMIT = 1000;
+const FREE_USER_WORD_LIMIT = 300;
 
 // Storage Keys
 const KEYS = {

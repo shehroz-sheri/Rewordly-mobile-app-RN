@@ -91,60 +91,70 @@ const UploadFileBottomSheet: React.FC<UploadFileBottomSheetProps> = ({
   );
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={onClose}
+    <>
+      <View style={[styles.clrOverlay, !isVisible && { display: 'none' }]}></View>
+      <Modal
+        visible={isVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
       >
-        <View
-          style={styles.bottomSheetContainer}
-          onStartShouldSetResponder={() => true}
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={onClose}
         >
-          <View style={styles.handle} />
+          <View
+            style={styles.bottomSheetContainer}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.handle} />
 
-          <Text style={styles.title}>Upload Document</Text>
+            <Text style={styles.title}>Upload Document</Text>
 
-          <View style={styles.optionsRow}>
-            <QuickUploadOption
-              title="Text"
-              icon="document-text-outline"
-              mimeType={DOCUMENT_TYPES.TXT}
-            />
-            <QuickUploadOption
-              title="PDF"
-              icon="document-attach-outline"
-              mimeType={DOCUMENT_TYPES.PDF}
-            />
-            <QuickUploadOption
-              title="Word"
-              icon="document-outline"
-              mimeType={DOCUMENT_TYPES.WORD || []}
-            />
-            <QuickUploadOption
-              title="Other"
-              icon="folder-open-outline"
-              mimeType={DOCUMENT_TYPES.ALL_DOCUMENTS}
-            />
+            <View style={styles.optionsRow}>
+              <QuickUploadOption
+                title="Text"
+                icon="document-text-outline"
+                mimeType={DOCUMENT_TYPES.TXT}
+              />
+              <QuickUploadOption
+                title="PDF"
+                icon="document-attach-outline"
+                mimeType={DOCUMENT_TYPES.PDF}
+              />
+              <QuickUploadOption
+                title="Word"
+                icon="document-outline"
+                mimeType={DOCUMENT_TYPES.WORD || []}
+              />
+              <QuickUploadOption
+                title="Other"
+                icon="folder-open-outline"
+                mimeType={DOCUMENT_TYPES.ALL_DOCUMENTS}
+              />
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </Modal>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 };
 
 export default UploadFileBottomSheet;
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  clrOverlay: {
+    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  }, modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   bottomSheetContainer: {
     backgroundColor: COLORS.light,
