@@ -111,16 +111,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.dark,
-    borderTopLeftRadius: 20, // Rounded top corners
-    borderTopRightRadius: 20, // Rounded top corners
+    borderTopLeftRadius: 24, // Rounded top corners
+    borderTopRightRadius: 24, // Rounded top corners
   },
   floatingTabBar: {
     flexDirection: 'row',
     backgroundColor: COLORS.dark,
     width: '100%', // Full width instead of 80%
     maxWidth: Dimensions.get('window').width > 380 ? '85%' : '80%',
-    borderTopLeftRadius: 20, // Rounded top corners
-    borderTopRightRadius: 20, // Rounded top corners
+    borderTopLeftRadius: 24, // Rounded top corners
+    borderTopRightRadius: 24, // Rounded top corners
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm_md,
     justifyContent: 'space-between',
