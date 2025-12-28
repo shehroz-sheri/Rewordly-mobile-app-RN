@@ -47,7 +47,7 @@ const HumanizerScreen: React.FC = () => {
   const [isUploadModalVisible, setIsUploadModalVisible] =
     useState<boolean>(false);
 
-  const charCount = inputText.length;
+
   const wordCount = inputText
     .trim()
     .split(/\s+/)
@@ -186,18 +186,7 @@ const HumanizerScreen: React.FC = () => {
     const isPremium = SubscriptionService.isPremium();
 
     if (!isPremium) {
-      // Show premium-only alert
-      Alert.alert(
-        'Premium Feature',
-        'File upload is a premium feature. Upgrade to Premium to upload PDF, TXT, and DOCX files.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Upgrade to Premium',
-            onPress: () => navigation.navigate('Paywall')
-          }
-        ]
-      );
+      navigation.navigate('Paywall')
       return;
     }
 
@@ -470,7 +459,7 @@ const HumanizerScreen: React.FC = () => {
 
           <View style={styles.inputControls}>
             <Text style={styles.countText}>
-              {wordCount} words / {charCount} chars
+              {wordCount} words
             </Text>
             {wordCount > 0 && (
               <TouchableOpacity onPress={handleClearInput} disabled={isLoading}>

@@ -33,7 +33,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSDocumentsFolderUsageDescription</key>
+	<key>NSDocumentFolderUsageDescription</key>
 	<string>We need access to your documents to upload files (PDF, TXT, DOCX) for text processing.</string>
 
 	<key>UILaunchStoryboardName</key>

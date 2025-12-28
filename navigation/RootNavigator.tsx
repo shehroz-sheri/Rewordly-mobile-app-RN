@@ -51,8 +51,9 @@ const RootNavigator: React.FC = () => {
         name="Paywall"
         component={PaywallScreen}
         options={{
-          presentation: 'modal',
+          presentation: 'fullScreenModal',
           animation: 'slide_from_bottom',
+          gestureEnabled: false,
         }}
       />
 

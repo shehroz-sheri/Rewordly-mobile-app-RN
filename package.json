@@ -1,6 +1,6 @@
 {
   "name": "Rewordly",
-  "version": "1.0.0",
+  "version": "1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -30,6 +30,7 @@
     "react-native-nitro-modules": "^0.31.10",
     "react-native-safe-area-context": "^5.6.2",
     "react-native-screens": "^4.18.0",
+    "react-native-store-review": "^0.4.3",
     "react-native-svg": "^15.14.0"
   },
   "devDependencies": {

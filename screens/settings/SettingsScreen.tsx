@@ -10,6 +10,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import * as StoreReview from 'react-native-store-review';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../../components/settingsItem/SettingsItem';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
@@ -185,16 +186,30 @@ const SettingsScreen: React.FC = () => {
       // High rating (4-5 stars) - Direct to store for public review
       try {
         if (Platform.OS === 'ios') {
-          // iOS App Store rating URL - Replace with your actual App Store ID
-          const appStoreId = 'YOUR_APP_STORE_ID'; // e.g., '123456789'
-          const url = `https://apps.apple.com/app/id${appStoreId}?action=write-review`;
-          const canOpen = await Linking.canOpenURL(url);
-          if (canOpen) {
-            await Linking.openURL(url);
-          } else {
+          // Use iOS in-app review (StoreKit) - shows native rating dialog
+          try {
+            StoreReview.requestReview();
+          } catch (reviewError) {
+            // Fallback to App Store if in-app review fails
             Alert.alert(
-              'Thank You!',
-              'We appreciate your positive feedback! Please rate us on the App Store.'
+              'Unable to Show Rating',
+              'We couldn\'t open the rating dialog. Please try again or rate us directly on the App Store.',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Try Again',
+                  onPress: () => {
+                    try {
+                      StoreReview.requestReview();
+                    } catch (e) {
+                      console.error('Retry failed:', e);
+                    }
+                  },
+                },
+              ]
             );
           }
         } else if (Platform.OS === 'android') {
