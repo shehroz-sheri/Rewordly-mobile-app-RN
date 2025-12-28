@@ -12,6 +12,7 @@ import {
   Alert,
   ToastAndroid,
   BackHandler,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
@@ -307,7 +308,7 @@ const HomeScreen: React.FC = () => {
             strokeWidth={2}
           />
           <View>
-            <Text style={styles.appName}>Text Tools</Text>
+            <Text style={styles.appName}>AI Humanizer Text</Text>
           </View>
         </View>
         <View>
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appName: {
-    fontSize: 20,
+    fontSize: Dimensions.get('window').height < 700 ? 18 : 20,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
   },

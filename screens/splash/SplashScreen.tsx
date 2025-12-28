@@ -47,7 +47,7 @@ const SplashScreen: React.FC = () => {
         console.log('🆕 New user - showing onboarding');
         navigation.replace('Onboarding');
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -68,7 +68,7 @@ const SplashScreen: React.FC = () => {
         ]}
       >
         <AppLogo />
-        <Text style={styles.heading}>AI Humanizer</Text>
+        <Text style={styles.heading}>AI Humanizer Text</Text>
         <Text style={styles.text}>Technology that speaks like you</Text>
       </View>
     </SafeAreaView>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   heading: {
-    fontSize: 42.9,
+    fontSize: 40,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
   },

@@ -82,7 +82,7 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
               <Ionicons
                 name={iconName as any}
                 size={20}
-                color={isFocused ? COLORS.dark : COLORS.secondary} // Invert color for active state
+                color={isFocused ? COLORS.dark : COLORS.light} // Invert color for active state
               />
 
               {/* Only show label if focused (Pill Design) */}
