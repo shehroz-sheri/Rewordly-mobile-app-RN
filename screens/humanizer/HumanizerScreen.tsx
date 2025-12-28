@@ -48,10 +48,31 @@ const HumanizerScreen: React.FC = () => {
     useState<boolean>(false);
 
 
+  // Check if user is premium
+  const isPremium = SubscriptionService.isPremium();
+  const FREE_USER_WORD_LIMIT = 300;
+
   const wordCount = inputText
     .trim()
     .split(/\s+/)
     .filter(w => w.length > 0).length;
+
+  // Function to enforce word limit for free users
+  const enforceWordLimit = (text: string): string => {
+    if (isPremium) return text;
+
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length <= FREE_USER_WORD_LIMIT) return text;
+
+    // Truncate to 300 words
+    return words.slice(0, FREE_USER_WORD_LIMIT).join(' ');
+  };
+
+  // Wrapper for setInputText that enforces word limit
+  const handleTextChange = (text: string) => {
+    const limitedText = enforceWordLimit(text);
+    setInputText(limitedText);
+  };
 
   const handleHumanize = async () => {
     if (wordCount === 0) {
@@ -202,7 +223,7 @@ const HumanizerScreen: React.FC = () => {
     try {
       const clipboardContent = await Clipboard.getString();
       if (clipboardContent && clipboardContent.trim().length > 0) {
-        setInputText(clipboardContent);
+        handleTextChange(clipboardContent);
       } else {
         if (Platform.OS === 'android') {
           ToastAndroid.show('Clipboard is empty', ToastAndroid.SHORT);
@@ -255,7 +276,7 @@ const HumanizerScreen: React.FC = () => {
       });
 
       // Set the extracted text to input
-      setInputText(result.text);
+      handleTextChange(result.text);
 
       // Show success message
       if (Platform.OS === 'android') {
@@ -318,7 +339,7 @@ const HumanizerScreen: React.FC = () => {
 
         if (data.success && data.text) {
           // Set extracted text to input field
-          setInputText(data.text);
+          handleTextChange(data.text);
 
           console.log('📊 Text extracted from backend:');
           console.log('📏 Length:', data.charCount);
@@ -439,7 +460,7 @@ const HumanizerScreen: React.FC = () => {
             placeholder="Paste Your AI text here or upload a file..."
             placeholderTextColor={COLORS.secondary}
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={handleTextChange}
             multiline={true}
             numberOfLines={10}
             editable={!isLoading}
@@ -459,7 +480,7 @@ const HumanizerScreen: React.FC = () => {
 
           <View style={styles.inputControls}>
             <Text style={styles.countText}>
-              {wordCount} words
+              {isPremium ? `${wordCount} words` : `${wordCount} / ${FREE_USER_WORD_LIMIT} words`}
             </Text>
             {wordCount > 0 && (
               <TouchableOpacity onPress={handleClearInput} disabled={isLoading}>
@@ -617,8 +638,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.offWhite,
   },
   countText: {
-    fontSize: 12,
-    fontFamily: FONTS.dmSans.regular,
+    fontSize: 13,
+    fontFamily: FONTS.dmSans.medium,
     color: COLORS.secondary,
   },
   pasteButtonCenter: {

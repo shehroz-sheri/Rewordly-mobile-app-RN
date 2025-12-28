@@ -38,10 +38,31 @@ const PlagiarismRemoverScreen: React.FC = () => {
     useState<boolean>(false);
 
 
+  // Check if user is premium
+  const isPremium = SubscriptionService.isPremium();
+  const FREE_USER_WORD_LIMIT = 300;
+
   const wordCount = inputText
     .trim()
     .split(/\s+/)
     .filter(w => w.length > 0).length;
+
+  // Function to enforce word limit for free users
+  const enforceWordLimit = (text: string): string => {
+    if (isPremium) return text;
+
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length <= FREE_USER_WORD_LIMIT) return text;
+
+    // Truncate to 300 words
+    return words.slice(0, FREE_USER_WORD_LIMIT).join(' ');
+  };
+
+  // Wrapper for setInputText that enforces word limit
+  const handleTextChange = (text: string) => {
+    const limitedText = enforceWordLimit(text);
+    setInputText(limitedText);
+  };
 
   const handleRemovePlagiarism = async () => {
     if (wordCount === 0) {
@@ -189,7 +210,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
     try {
       const clipboardContent = await Clipboard.getString();
       if (clipboardContent && clipboardContent.trim().length > 0) {
-        setInputText(clipboardContent);
+        handleTextChange(clipboardContent);
       } else {
         if (Platform.OS === 'android') {
           ToastAndroid.show('Clipboard is empty', ToastAndroid.SHORT);
@@ -242,7 +263,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
       });
 
       // Set the extracted text to input
-      setInputText(result.text);
+      handleTextChange(result.text);
 
       // Show success message
       if (Platform.OS === 'android') {
@@ -305,7 +326,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
 
         if (data.success && data.text) {
           // Set extracted text to input field
-          setInputText(data.text);
+          handleTextChange(data.text);
 
           console.log('📊 Text extracted from backend:');
           console.log('📏 Length:', data.charCount);
@@ -404,7 +425,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
             placeholder="Paste your content here or upload a file..."
             placeholderTextColor={COLORS.secondary}
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={handleTextChange}
             multiline={true}
             numberOfLines={20}
             editable={!isLoading}
@@ -424,7 +445,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
 
           <View style={styles.inputControls}>
             <Text style={styles.countText}>
-              {wordCount} words
+              {isPremium ? `${wordCount} words` : `${wordCount} / ${FREE_USER_WORD_LIMIT} words`}
             </Text>
             {wordCount > 0 && (
               <TouchableOpacity onPress={handleClearInput} disabled={isLoading}>
