@@ -133,25 +133,7 @@ const PaywallScreen: React.FC = () => {
         : '$4.99';
   };
 
-  // Get strikethrough price based on discount percentage
-  const getStrikethroughPrice = (planType: 'weekly' | 'monthly' | 'yearly'): string => {
-    const product = getProduct(planType);
-    const plan = plans.find(p => p.id === planType);
-    const discountPercent = plan?.discountPercent || 30;
 
-    if (product?.price) {
-      const actualPrice = parseFloat(product.price);
-      // Calculate strikethrough price: actual price / (1 - discount%)
-      // Example: $29.99 / (1 - 0.30) = $29.99 / 0.70 = $42.84
-      const strikePrice = (actualPrice / (1 - discountPercent / 100)).toFixed(2);
-      return product.currency === 'USD' ? `$${strikePrice}` : `${strikePrice}`;
-    }
-
-    // Fallback prices
-    return planType === 'yearly' ? '$35.99'
-      : planType === 'monthly' ? '$12.99'
-        : '$6.49';
-  };
 
   // Get free trial period text
   const getTrialText = (planType: 'weekly' | 'monthly' | 'yearly'): string | null => {
@@ -283,7 +265,6 @@ const PaywallScreen: React.FC = () => {
                     </View>
 
                     <View style={styles.planRight}>
-                      <Text style={styles.strikePrice}>{getStrikethroughPrice(planType)}</Text>
                       <View style={styles.priceRow}>
                         <Text style={styles.actualPrice}>{getFormattedPrice(planType)}</Text>
                         <Text style={styles.period}>{plan.period}</Text>
@@ -398,8 +379,8 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 75 : 100,
-    maxHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 125 : 160,
+    minHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 70 : 90,
+    maxHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 110 : 140,
   },
   crownImage: {
     width: '100%',
@@ -521,13 +502,7 @@ const styles = StyleSheet.create({
   planRight: {
     alignItems: 'flex-end',
   },
-  strikePrice: {
-    fontSize: Dimensions.get('window').height < 700 ? 12 : 13,
-    marginBottom: -4,
-    fontFamily: FONTS.sora.regular,
-    color: '#9CA3AF',
-    textDecorationLine: 'line-through',
-  },
+
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -551,8 +526,8 @@ const styles = StyleSheet.create({
   },
   subscribeButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: SPACING.sm_md,
+    paddingVertical: SPACING.sm_md,
     alignItems: 'center',
     marginBottom: SPACING.sm,
     // Shadow for iOS

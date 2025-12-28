@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
   ToastAndroid,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
@@ -21,6 +22,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useApiConfig } from '../../context/ApiConfigContext';
 import AppLogo from '../../assets/logo.svg';
 import { SubscriptionService } from '../../services/SubscriptionService';
+import { useScreen } from '../../hooks/useScreen';
 
 // --- TYPES ---
 type ToolItem = {
@@ -49,6 +51,21 @@ const HomeScreen: React.FC = () => {
         setIsPremiumUser(premium);
       };
       checkPremium();
+    }, [])
+  );
+
+  // Handle hardware back button to exit app from home screen
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Exit the app when back is pressed from home screen
+        BackHandler.exitApp();
+        return true; // Prevent default back behavior
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => backHandler.remove();
     }, [])
   );
 
@@ -114,14 +131,14 @@ const HomeScreen: React.FC = () => {
     // Check if it's an external tool (AI Detector or Check Plagiarism)
     if (item.isExternal) {
       let targetUrl: string | null = null;
-      
+
       // Determine which URL to use based on platform and tool type
       if (item.id === 'detector-ai') {
         targetUrl = Platform.OS === 'android' ? aiDetectorAndroidUrl : aiDetectorIosUrl;
       } else if (item.id === 'detector-plag') {
         targetUrl = Platform.OS === 'android' ? plagiarismCheckerAndroidUrl : plagiarismCheckerIosUrl;
       }
-      
+
       // Check if URL exists and is not empty
       if (targetUrl && targetUrl.trim().length > 0) {
         console.log(`🔗 Opening external URL for ${item.title}:`, targetUrl);
@@ -134,7 +151,7 @@ const HomeScreen: React.FC = () => {
         });
         return;
       }
-      
+
       // Show "Coming Soon" if URL is not available
       console.log(`ℹ️ No URL configured for ${item.title} on ${Platform.OS}`);
       if (Platform.OS === 'android') {
@@ -151,7 +168,7 @@ const HomeScreen: React.FC = () => {
       }
       return;
     }
-    
+
     // Navigate to internal screens
     if (item.route) navigation.navigate(item.route as any);
   };

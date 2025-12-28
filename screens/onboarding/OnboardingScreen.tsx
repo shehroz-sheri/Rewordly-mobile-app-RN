@@ -63,21 +63,24 @@ const OnboardingScreen: React.FC = () => {
       setCurrentStep(prev => prev + 1);
     } else {
       console.log('Finished Onboarding!');
-      
+
       // Mark onboarding as completed
       StorageService.setOnboardingCompleted();
-      
+
       // Check if user is premium
       const isPremium = SubscriptionService.isPremium();
-      
-      if (isPremium) {
-        // Premium user - go directly to home
-        console.log('✅ Premium user - navigating to home');
-        navigation.navigate('MainTabs');
+
+      // Navigate to home first for all users (replace to prevent back navigation)
+      navigation.replace('MainTabs');
+
+      if (!isPremium) {
+        // Non-premium user - show paywall after a brief glimpse of home
+        console.log('💰 Non-premium user - showing paywall after home glimpse');
+        setTimeout(() => {
+          navigation.navigate('Paywall');
+        }, 1500); // 1500ms delay to show home screen briefly
       } else {
-        // Non-premium user - show paywall first
-        console.log('💰 Non-premium user - showing paywall');
-        navigation.navigate('Paywall');
+        console.log('✅ Premium user - staying on home');
       }
     }
   };

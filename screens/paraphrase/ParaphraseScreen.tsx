@@ -46,7 +46,14 @@ const ParaphraseScreen: React.FC = () => {
 
   const handleRemovePlagiarism = async () => {
     if (wordCount === 0) {
-      Alert.alert('No Input', 'Please paste or type text to paraphrase.');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          'Please paste or type text to paraphrase.',
+          ToastAndroid.LONG,
+        );
+      } else {
+        Alert.alert('No Input', 'Please paste or type text to paraphrase.');
+      }
       return;
     }
 
@@ -163,6 +170,26 @@ const ParaphraseScreen: React.FC = () => {
   };
 
   const handleUploadOrPaste = () => {
+    // Check if user is premium
+    const isPremium = SubscriptionService.isPremium();
+
+    if (!isPremium) {
+      // Show premium-only alert
+      Alert.alert(
+        'Premium Feature',
+        'File upload is a premium feature. Upgrade to Premium to upload PDF, TXT, and DOCX files.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade to Premium',
+            onPress: () => navigation.navigate('Paywall')
+          }
+        ]
+      );
+      return;
+    }
+
+    // Premium user - show upload modal
     setIsUploadModalVisible(true);
   };
 
@@ -434,7 +461,7 @@ const ParaphraseScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.removeButton}
             onPress={handleRemovePlagiarism}
-            disabled={isLoading || wordCount === 0}
+            disabled={isLoading}
             activeOpacity={0.8}
           >
             <Text style={styles.removeButtonText}>Paraphrase</Text>
@@ -521,7 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.offWhite,
     borderRadius: SPACING.md,
     padding: SPACING.md,
-    minHeight: 350,
+    minHeight: 250,
     paddingBottom: 0,
   },
   textInput: {

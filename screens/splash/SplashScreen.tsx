@@ -30,19 +30,22 @@ const SplashScreen: React.FC = () => {
         const { SubscriptionService } = require('../../services/SubscriptionService');
         const isPremium = SubscriptionService.isPremium();
 
-        if (isPremium) {
-          // Premium user - go directly to home
-          console.log('✅ Premium user - navigating to home');
-          navigation.navigate('MainTabs');
+        // Navigate to home first for all users (replace to prevent back navigation)
+        navigation.replace('MainTabs');
+
+        if (!isPremium) {
+          // Non-premium user - show paywall after a brief glimpse of home
+          console.log('💎 Non-premium user - showing paywall after home glimpse');
+          setTimeout(() => {
+            navigation.navigate('Paywall');
+          }, 600); // 600ms delay to show home screen briefly
         } else {
-          // Non-premium user - show paywall
-          console.log('💎 Non-premium user - showing paywall');
-          navigation.navigate('Paywall');
+          console.log('✅ Premium user - staying on home');
         }
       } else {
-        // New user - show onboarding
+        // New user - show onboarding (replace to prevent back navigation)
         console.log('🆕 New user - showing onboarding');
-        navigation.navigate('Onboarding');
+        navigation.replace('Onboarding');
       }
     }, 2500);
 

@@ -31,7 +31,7 @@ const ResultScreen: React.FC = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<ResultScreenRouteProp>();
   const { generatePdfUrl, generateDocxUrl } = useApiConfig();
-  
+
   // Get navigation params
   const { sourceScreen, originalText, resultText, style } = route.params;
 
@@ -73,7 +73,7 @@ const ResultScreen: React.FC = () => {
       const result = await Share.share({
         message: currentResultText,
       });
-      
+
       if (result.action === Share.sharedAction) {
         if (result.activityType) {
           // shared with activity type of result.activityType
@@ -151,11 +151,11 @@ const ResultScreen: React.FC = () => {
       } else if (format === 'PDF') {
         // Call backend to generate PDF
         console.log('📤 Sending text to backend for PDF generation...');
-        
+
         if (!generatePdfUrl) {
           throw new Error('PDF generation service not configured');
         }
-        
+
         const response = await fetch(generatePdfUrl, {
           method: 'POST',
           headers: {
@@ -183,11 +183,11 @@ const ResultScreen: React.FC = () => {
       } else if (format === 'DOCX') {
         // Call backend to generate DOCX
         console.log('📤 Sending text to backend for DOCX generation...');
-        
+
         if (!generateDocxUrl) {
           throw new Error('DOCX generation service not configured');
         }
-        
+
         const response = await fetch(generateDocxUrl, {
           method: 'POST',
           headers: {
@@ -238,8 +238,15 @@ const ResultScreen: React.FC = () => {
   };
 
   const handleNewProcess = () => {
-    // Navigate back to the corresponding input screen
-    navigation.navigate(sourceScreen);
+    // Reset navigation stack and navigate to the source screen
+    // This prevents navigation loops through previous result screens
+    navigation.reset({
+      index: 1,
+      routes: [
+        { name: 'MainTabs' },
+        { name: sourceScreen }
+      ],
+    });
   };
 
   return (
@@ -268,11 +275,11 @@ const ResultScreen: React.FC = () => {
       {/* --- Result Display Box with Scrollable Text --- */}
       <View style={styles.resultWrapper}>
         <View style={styles.resultHeader}>
-          <Text style={styles.resultTitle}>Final {getScreenDisplayName() === 'Plagiarism Remover'&& ''} Output</Text>
+          <Text style={styles.resultTitle}>Final {getScreenDisplayName() === 'Plagiarism Remover' && ''} Output</Text>
           <Text style={styles.countText}>{resultWordCount} words</Text>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.resultTextScrollView}
           contentContainerStyle={styles.resultTextContent}
           showsVerticalScrollIndicator={true}

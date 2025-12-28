@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StatusBar,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   Platform,
@@ -16,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DocumentPickerResponse } from '@react-native-documents/picker';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
 import UploadFileBottomSheet from '../../components/uploadFileBottomSheet/UploadFileBottomSheet';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,6 +26,7 @@ import { useApiConfig } from '../../context/ApiConfigContext';
 import { SubscriptionService } from '../../services/SubscriptionService';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useScreen } from '../../hooks/useScreen';
 
 type StyleOption = 'Casual' | 'Business' | 'Academic';
 
@@ -36,6 +37,7 @@ const styleOptions: { value: StyleOption; label: string }[] = [
 ];
 
 const HumanizerScreen: React.FC = () => {
+  const { screen_width } = useScreen();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { baseURL, fileExtractUrl } = useApiConfig();
@@ -53,7 +55,14 @@ const HumanizerScreen: React.FC = () => {
 
   const handleHumanize = async () => {
     if (wordCount === 0) {
-      Alert.alert('No Input', 'Please paste or type text to humanize.');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          'Please paste or type text to humanize.',
+          ToastAndroid.LONG,
+        );
+      } else {
+        Alert.alert('No Input', 'Please paste or type text to humanize.');
+      }
       return;
     }
 
@@ -77,20 +86,20 @@ const HumanizerScreen: React.FC = () => {
     // ✅ SUBSCRIPTION CHECK
     const isPremium = SubscriptionService.isPremium();
 
-    if (!isPremium) {
-      // Check free tries
-      const hasFreeTries = SubscriptionService.hasFreeTries('humanizer');
+    // if (!isPremium) {
+    //   // Check free tries
+    //   const hasFreeTries = SubscriptionService.hasFreeTries('humanizer');
 
-      if (!hasFreeTries) {
-        // No free tries left - navigate directly to paywall
-        navigation.navigate('Paywall');
-        return;
-      }
+    //   if (!hasFreeTries) {
+    //     // No free tries left - navigate directly to paywall
+    //     navigation.navigate('Paywall');
+    //     return;
+    //   }
 
-      // Has free try → Use it
-      SubscriptionService.useFreeTry('humanizer');
-      console.log('✅ Used free try for Humanizer');
-    }
+    //   // Has free try → Use it
+    //   SubscriptionService.useFreeTry('humanizer');
+    //   console.log('✅ Used free try for Humanizer');
+    // }
 
     if (!baseURL) {
       Alert.alert('Error', 'Please try again later.');
@@ -173,6 +182,26 @@ const HumanizerScreen: React.FC = () => {
   };
 
   const handleUploadOrPaste = () => {
+    // Check if user is premium
+    const isPremium = SubscriptionService.isPremium();
+
+    if (!isPremium) {
+      // Show premium-only alert
+      Alert.alert(
+        'Premium Feature',
+        'File upload is a premium feature. Upgrade to Premium to upload PDF, TXT, and DOCX files.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade to Premium',
+            onPress: () => navigation.navigate('Paywall')
+          }
+        ]
+      );
+      return;
+    }
+
+    // Premium user - show upload modal
     setIsUploadModalVisible(true);
   };
 
@@ -423,7 +452,7 @@ const HumanizerScreen: React.FC = () => {
             value={inputText}
             onChangeText={setInputText}
             multiline={true}
-            numberOfLines={20}
+            numberOfLines={10}
             editable={!isLoading}
           />
 
@@ -434,7 +463,7 @@ const HumanizerScreen: React.FC = () => {
               onPress={handlePasteFromClipboard}
               activeOpacity={0.7}
             >
-              <Ionicons name="clipboard-outline" size={40} color={COLORS.dark} />
+              <Ionicons name="clipboard-outline" size={screen_width * 0.09} color={COLORS.dark} />
               <Text style={styles.pasteButtonText}>Tap to Paste</Text>
             </TouchableOpacity>
           )}
@@ -445,7 +474,7 @@ const HumanizerScreen: React.FC = () => {
             </Text>
             {wordCount > 0 && (
               <TouchableOpacity onPress={handleClearInput} disabled={isLoading}>
-                <Text style={styles.clearText}>Clear</Text>
+                <MaterialDesignIcons name='delete-outline' size={22} color={COLORS.tertiary} />
               </TouchableOpacity>
             )}
           </View>
@@ -470,7 +499,7 @@ const HumanizerScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.humanizeButton}
             onPress={handleHumanize}
-            disabled={isLoading || wordCount === 0}
+            disabled={isLoading}
             activeOpacity={0.8}
           >
             <Text style={styles.humanizeButtonText}>Humanize</Text>
@@ -577,7 +606,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.offWhite,
     borderRadius: SPACING.md,
     padding: SPACING.md,
-    minHeight: 350,
+    minHeight: 250,
     paddingBottom: 0,
   },
   textInput: {
@@ -593,7 +622,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.sm_md,
+    paddingVertical: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.surface,
     backgroundColor: COLORS.offWhite,
@@ -603,28 +632,22 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.dmSans.regular,
     color: COLORS.secondary,
   },
-  clearText: {
-    fontSize: 12,
-    fontFamily: FONTS.dmSans.medium,
-    color: COLORS.tertiary,
-    paddingHorizontal: SPACING.xs,
-  },
   pasteButtonCenter: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -47 }, { translateY: -50 }],
+    transform: [{ translateX: -40 }, { translateY: -50 }],
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: '#dfe0dbb3', // Light version of primary color
-    borderRadius: SPACING.lg,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm_md,
+    backgroundColor: '#dfe0db81', // Light version of primary color
+    borderRadius: SPACING.md,
     borderWidth: 2,
     borderColor: COLORS.surface,
   },
   pasteButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONTS.sora.medium,
     color: COLORS.dark,
     marginTop: SPACING.xs,

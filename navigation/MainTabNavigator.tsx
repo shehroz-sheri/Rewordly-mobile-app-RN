@@ -19,9 +19,6 @@ const MainTabNavigator: React.FC = () => {
       screenOptions={() => ({
         headerShown: false,
         tabBarShowLabel: true,
-        // tabBarStyle: {
-        //   display: 'none',
-        // },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />

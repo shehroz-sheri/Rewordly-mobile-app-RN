@@ -37,7 +37,6 @@ const DOCUMENT_TYPES = {
     ],
     default: [],
   }),
-  ALL_DOCUMENTS: types.allFiles,
 };
 
 const UploadFileBottomSheet: React.FC<UploadFileBottomSheetProps> = ({
@@ -127,11 +126,6 @@ const UploadFileBottomSheet: React.FC<UploadFileBottomSheetProps> = ({
                 title="Word"
                 icon="document-outline"
                 mimeType={DOCUMENT_TYPES.WORD || []}
-              />
-              <QuickUploadOption
-                title="Other"
-                icon="folder-open-outline"
-                mimeType={DOCUMENT_TYPES.ALL_DOCUMENTS}
               />
             </View>
           </View>
