@@ -152,11 +152,11 @@ const PaywallScreen: React.FC = () => {
   };
 
   const handlePrivacyPolicy = () => {
-    Linking.openURL('https://yourapp.com/privacy');
+    Linking.openURL('https://appsflowstudio.blogspot.com/2025/12/privacy-policy.html');
   };
 
   const handleTerms = () => {
-    Linking.openURL('https://yourapp.com/terms');
+    Linking.openURL('https://appsflowstudio.blogspot.com/2025/12/terms-conditions.html');
   };
 
   // 🎯 CONFIGURE DISCOUNT PERCENTAGES HERE
@@ -207,133 +207,135 @@ const PaywallScreen: React.FC = () => {
       </View>
 
       {/* Content - Title at top, everything else at bottom */}
-      <View style={styles.content}>
-        <View style={styles.crownContainer}>
-          <Image
-            source={require('../../assets/images/crown.png')}
-            style={styles.crownImage}
-            resizeMode="contain"
-          />
-        </View>
-        <ScrollView
-          style={styles.scrollSection}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>Unlock Premium</Text>
-            <Text style={styles.subtitle}>Get unlimited access to all features</Text>
+      <View style={styles.contentWrapper}>
+        <View style={styles.content}>
+          <View style={styles.crownContainer}>
+            <Image
+              source={require('../../assets/images/crown.png')}
+              style={styles.crownImage}
+              resizeMode="contain"
+            />
           </View>
-          {/* Key Features - Compact */}
-          <View style={styles.featuresSection}>
-            <FeatureRow icon="infinite" text="Unlimited AI Requests Daily" />
-            <FeatureRow icon="document-text" text="Unlimited Words Per Request" />
-            <FeatureRow icon="flash" text="Priority Processing Speed" />
-            <FeatureRow icon="shield-checkmark" text="Complete Ad-Free Experience" />
-          </View>
-
-          {/* Plans - Fixed Height */}
-          <View style={styles.plansSection}>
-            {plans.map((plan) => {
-              const planType = plan.id as 'weekly' | 'monthly' | 'yearly';
-              const isSelected = selectedPlan === planType;
-              const trial = getTrialText(planType);
-
-              return (
-                <TouchableOpacity
-                  key={plan.id}
-                  style={[styles.planCard, isSelected && styles.planCardSelected]}
-                  onPress={() => setSelectedPlan(planType)}
-                  activeOpacity={0.8}
-                >
-                  {plan.badge && plan.id === 'yearly' && (
-                    <View style={[styles.badge, styles.badgeBest]}>
-                      <Text style={styles.badgeText}>{plan.badge}</Text>
-                    </View>
-                  )}
-
-                  <View style={styles.planContent}>
-                    <View style={styles.planLeft}>
-                      <View style={styles.radioOuter}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
-                      <View>
-                        <Text style={styles.planName}>{plan.name}</Text>
-                        {trial && <Text style={styles.trialText}>{trial}</Text>}
-                      </View>
-                    </View>
-
-                    <View style={styles.planRight}>
-                      <View style={styles.priceRow}>
-                        <Text style={styles.actualPrice}>{getFormattedPrice(planType)}</Text>
-                        <Text style={styles.period}>{plan.period}</Text>
-                      </View>
-                      {plan.discountPercent > 0 && (
-                        <Text style={styles.savings}>Save {plan.discountPercent}%</Text>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
-
-        {/* Fixed Bottom Section - Subscribe Button & Links */}
-        <View style={styles.fixedBottomSection}>
-          {/* Subscribe Button */}
-          <TouchableOpacity
-            style={[styles.subscribeButton, loading && styles.buttonDisabled]}
-            activeOpacity={0.8}
-            onPress={() =>
-              handlePurchase(
-                selectedPlan === 'yearly'
-                  ? productIds.YEARLY
-                  : selectedPlan === 'monthly'
-                    ? productIds.MONTHLY
-                    : productIds.WEEKLY
-              )
-            }
-            disabled={loading}
+          <ScrollView
+            style={styles.scrollSection}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
           >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.subscribeButtonText}>
-                {selectedPlan === 'yearly' || selectedPlan === 'monthly'
-                  ? 'Start Free Trial'
-                  : 'Subscribe Now'}
-              </Text>
-            )}
-          </TouchableOpacity>
+            <View style={styles.titleSection}>
+              <Text style={styles.title}>Unlock Premium</Text>
+              <Text style={styles.subtitle}>Get unlimited access to all features</Text>
+            </View>
+            {/* Key Features - Compact */}
+            <View style={styles.featuresSection}>
+              <FeatureRow icon="infinite" text="Unlimited AI Requests Daily" />
+              <FeatureRow icon="document-text" text="Unlimited Words Per Request" />
+              <FeatureRow icon="flash" text="Priority Processing Speed" />
+              <FeatureRow icon="shield-checkmark" text="Complete Ad-Free Experience" />
+            </View>
 
-          {/* Cancel Anytime */}
-          <Text style={styles.cancelText}>No commitment • Cancel anytime</Text>
+            {/* Plans - Fixed Height */}
+            <View style={styles.plansSection}>
+              {plans.map((plan) => {
+                const planType = plan.id as 'weekly' | 'monthly' | 'yearly';
+                const isSelected = selectedPlan === planType;
+                const trial = getTrialText(planType);
 
-          {/* Restore & Links */}
-          <View style={styles.linksRow}>
-            <TouchableOpacity onPress={handleRestore} disabled={loading}>
-              <Text style={styles.linkText}>Restore Purchase</Text>
-            </TouchableOpacity>
-            <Text style={styles.linkDivider}>•</Text>
-            <TouchableOpacity onPress={handlePrivacyPolicy}>
-              <Text style={styles.linkText}>Privacy Policy</Text>
-            </TouchableOpacity>
-            <Text style={styles.linkDivider}>•</Text>
-            <TouchableOpacity onPress={handleTerms}>
-              <Text style={styles.linkText}>Terms of Use</Text>
-            </TouchableOpacity>
-          </View>
+                return (
+                  <TouchableOpacity
+                    key={plan.id}
+                    style={[styles.planCard, isSelected && styles.planCardSelected]}
+                    onPress={() => setSelectedPlan(planType)}
+                    activeOpacity={0.8}
+                  >
+                    {plan.badge && plan.id === 'yearly' && (
+                      <View style={[styles.badge, styles.badgeBest]}>
+                        <Text style={styles.badgeText}>{plan.badge}</Text>
+                      </View>
+                    )}
 
-          {/* Terms Text */}
-          {/* <Text style={styles.termsText}>
+                    <View style={styles.planContent}>
+                      <View style={styles.planLeft}>
+                        <View style={styles.radioOuter}>
+                          {isSelected && <View style={styles.radioInner} />}
+                        </View>
+                        <View>
+                          <Text style={styles.planName}>{plan.name}</Text>
+                          {trial && <Text style={styles.trialText}>{trial}</Text>}
+                        </View>
+                      </View>
+
+                      <View style={styles.planRight}>
+                        <View style={styles.priceRow}>
+                          <Text style={styles.actualPrice}>{getFormattedPrice(planType)}</Text>
+                          <Text style={styles.period}>{plan.period}</Text>
+                        </View>
+                        {plan.discountPercent > 0 && (
+                          <Text style={styles.savings}>Save {plan.discountPercent}%</Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* Fixed Bottom Section - Subscribe Button & Links */}
+          <View style={styles.fixedBottomSection}>
+            {/* Subscribe Button */}
+            <TouchableOpacity
+              style={[styles.subscribeButton, loading && styles.buttonDisabled]}
+              activeOpacity={0.8}
+              onPress={() =>
+                handlePurchase(
+                  selectedPlan === 'yearly'
+                    ? productIds.YEARLY
+                    : selectedPlan === 'monthly'
+                      ? productIds.MONTHLY
+                      : productIds.WEEKLY
+                )
+              }
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.subscribeButtonText}>
+                  {selectedPlan === 'yearly' || selectedPlan === 'monthly'
+                    ? 'Start Free Trial'
+                    : 'Subscribe Now'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Cancel Anytime */}
+            <Text style={styles.cancelText}>No commitment • Cancel anytime</Text>
+
+            {/* Restore & Links */}
+            <View style={styles.linksRow}>
+              <TouchableOpacity onPress={handleRestore} disabled={loading}>
+                <Text style={styles.linkText}>Restore Purchase</Text>
+              </TouchableOpacity>
+              <Text style={styles.linkDivider}>•</Text>
+              <TouchableOpacity onPress={handlePrivacyPolicy}>
+                <Text style={styles.linkText}>Privacy Policy</Text>
+              </TouchableOpacity>
+              <Text style={styles.linkDivider}>•</Text>
+              <TouchableOpacity onPress={handleTerms}>
+                <Text style={styles.linkText}>Terms of Use</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Terms Text */}
+            {/* <Text style={styles.termsText}>
             {selectedPlan === 'yearly'
               ? 'Free for 7 days, then $29.99/year. Auto-renews unless cancelled.'
               : selectedPlan === 'monthly'
                 ? 'Free for 3 days, then $9.99/month. Auto-renews unless cancelled.'
                 : 'Subscription renews at $4.99/week unless cancelled.'}
           </Text> */}
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -358,7 +360,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: '50%',
+    height: '60%',
   },
   header: {
     flexDirection: 'row',
@@ -370,15 +372,21 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: SPACING.xs,
   },
-  content: {
+  contentWrapper:{
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  content: {
+    // flex: 1,
     paddingHorizontal: SPACING.lg,
   },
   crownContainer: {
-    flex: 1,
+    // flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: SPACING.lg,
+    // height: 'auto',
     minHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 70 : 90,
     maxHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 110 : 140,
   },
@@ -388,10 +396,10 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
-    flex: 1,
+    // flex: 1,
     justifyContent: 'center',
-    maxHeight: '35%',
-    marginBottom: SPACING.sm
+    // maxHeight: '35%',
+    marginBottom: SPACING.xxl,
   },
   title: {
     fontSize: Dimensions.get('window').height < 700 ? 28 : 32,
@@ -527,7 +535,7 @@ const styles = StyleSheet.create({
   subscribeButton: {
     backgroundColor: COLORS.primary,
     borderRadius: SPACING.sm_md,
-    paddingVertical: SPACING.sm_md,
+    paddingVertical: 14,
     alignItems: 'center',
     marginBottom: SPACING.sm,
     // Shadow for iOS

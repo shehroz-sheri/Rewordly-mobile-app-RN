@@ -114,7 +114,7 @@ const SettingsScreen: React.FC = () => {
       iconSet: 'Ionicons',
       iconName: 'star-half-outline',
       label: 'Rate Us',
-      onPress: () => setShowRateModal(true),
+      onPress: () => handleRateUs(),
     },
   ];
 
@@ -124,16 +124,37 @@ const SettingsScreen: React.FC = () => {
       iconSet: 'Ionicons',
       iconName: 'shield-checkmark-outline',
       label: 'Privacy Policy',
-      onPress: () => console.log('Privacy Policy'),
+      onPress: () => Linking.openURL('https://appsflowstudio.blogspot.com/2025/12/privacy-policy.html'),
     },
     {
       id: '9',
       iconSet: 'MaterialDesignIcons',
       iconName: 'file-document-outline',
       label: 'Terms & Conditions',
-      onPress: () => console.log('Terms & Conditions'),
+      onPress: () => Linking.openURL('https://appsflowstudio.blogspot.com/2025/12/terms-conditions.html'),
     },
   ];
+
+  const handleRateUs = async () => {
+    if (Platform.OS === 'ios') {
+      // iOS: Directly show Apple's native StoreKit review dialog
+      // No custom modal needed - user rates once in the official dialog
+      try {
+        StoreReview.requestReview();
+      } catch (error) {
+        console.error('Error showing iOS review dialog:', error);
+        Alert.alert(
+          'Unable to Show Rating',
+          'We couldn\'t open the rating dialog. Please try again later.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else {
+      // Android: Show custom modal to collect rating first
+      // This allows us to handle low ratings differently (show feedback option)
+      setShowRateModal(true);
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -180,13 +201,16 @@ const SettingsScreen: React.FC = () => {
 
   const handleRateSubmit = async (rating: number) => {
     console.log('Rating submitted:', rating);
-    setShowRateModal(false);
 
     if (rating >= 4) {
       // High rating (4-5 stars) - Direct to store for public review
+      // Close modal immediately for smoother UX
+      setShowRateModal(false);
+
       try {
         if (Platform.OS === 'ios') {
-          // Use iOS in-app review (StoreKit) - shows native rating dialog
+          // iOS: Show native StoreKit review dialog immediately
+          // This eliminates the redundant two-modal experience
           try {
             StoreReview.requestReview();
           } catch (reviewError) {
@@ -234,6 +258,9 @@ const SettingsScreen: React.FC = () => {
       }
     } else {
       // Low rating (1-3 stars) - Show feedback message
+      // Close modal first, then show feedback alert
+      setShowRateModal(false);
+
       Alert.alert(
         'Thank You for Your Feedback',
         'We appreciate your rating. If you\'re facing any issues, please contact us so we can help improve your experience.',
