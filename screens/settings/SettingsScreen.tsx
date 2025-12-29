@@ -21,6 +21,7 @@ import { useState } from 'react';
 import JoinDiscordModal from '../../components/joinDiscordModal/JoinDiscordModal';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { useApiConfig } from '../../context/ApiConfigContext';
 
 type IconSet = 'MaterialDesignIcons' | 'Ionicons';
 
@@ -43,6 +44,7 @@ const SettingsScreen: React.FC = () => {
   const [showDiscordModal, setShowDiscordModal] = useState<boolean>(false);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const isPremium = SubscriptionService.isPremium();
+  const { discordServerKey } = useApiConfig();
 
   const handleRestorePurchases = async () => {
     setIsRestoring(true);
@@ -102,21 +104,26 @@ const SettingsScreen: React.FC = () => {
       label: 'Contact Us',
       onPress: () => console.log('Contact Us'),
     },
-    {
+  ];
+
+  // Conditionally add Discord button only if discord_server_key is present
+  if (discordServerKey && discordServerKey.length > 0) {
+    interactionGroup.push({
       id: '6',
       iconSet: 'Ionicons',
       iconName: 'logo-discord',
       label: 'Join Our Discord',
       onPress: () => setShowDiscordModal(true),
-    },
-    {
-      id: '7',
-      iconSet: 'Ionicons',
-      iconName: 'star-half-outline',
-      label: 'Rate Us',
-      onPress: () => handleRateUs(),
-    },
-  ];
+    });
+  }
+
+  interactionGroup.push({
+    id: '7',
+    iconSet: 'Ionicons',
+    iconName: 'star-half-outline',
+    label: 'Rate Us',
+    onPress: () => handleRateUs(),
+  });
 
   const legalGroup: SettingsOption[] = [
     {
@@ -305,6 +312,7 @@ const SettingsScreen: React.FC = () => {
       <JoinDiscordModal
         visible={showDiscordModal}
         onClose={() => setShowDiscordModal(false)}
+        discordLink={discordServerKey || ''}
       />
       <View style={{ height: 60 }} />
     </SafeAreaView>

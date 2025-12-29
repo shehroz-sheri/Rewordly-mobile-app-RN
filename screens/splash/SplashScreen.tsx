@@ -89,9 +89,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   heading: {
-    fontSize: 40,
+    fontSize: 32,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
+    textAlign: 'center',
   },
   text: {
     fontSize: 18,

@@ -19,6 +19,7 @@ const { width } = Dimensions.get('window');
 interface JoinDiscordModalProps {
   visible: boolean;
   onClose: () => void;
+  discordLink: string;
 }
 
 const DISCORD_INVITE_LINK = 'https://discord.gg/yourInviteCodeHere'; // replace with your actual invite
@@ -26,10 +27,11 @@ const DISCORD_INVITE_LINK = 'https://discord.gg/yourInviteCodeHere'; // replace 
 const JoinDiscordModal: React.FC<JoinDiscordModalProps> = ({
   visible,
   onClose,
+  discordLink,
 }) => {
   const handleJoin = async () => {
     onClose();
-    await Linking.openURL(DISCORD_INVITE_LINK);
+    await Linking.openURL(discordLink);
   };
 
   const features = [

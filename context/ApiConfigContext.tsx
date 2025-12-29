@@ -22,6 +22,7 @@ interface ApiConfigContextType {
   plagiarismCheckerAndroidUrl: string | null;
   plagiarismCheckerIosUrl: string | null;
   validateReceiptUrl: string | null;
+  discordServerKey: string | null;
   isLoading: boolean;
   error: string | null;
   refetchConfig: () => Promise<void>;
@@ -38,9 +39,10 @@ const ApiConfigContext = createContext<ApiConfigContextType>({
   plagiarismCheckerAndroidUrl: null,
   plagiarismCheckerIosUrl: null,
   validateReceiptUrl: null,
+  discordServerKey: null,
   isLoading: true,
   error: null,
-  refetchConfig: async () => {},
+  refetchConfig: async () => { },
 });
 
 interface ApiConfigProviderProps {
@@ -60,6 +62,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
   const [plagiarismCheckerAndroidUrl, setPlagiarismCheckerAndroidUrl] = useState<string | null>(null);
   const [plagiarismCheckerIosUrl, setPlagiarismCheckerIosUrl] = useState<string | null>(null);
   const [validateReceiptUrl, setValidateReceiptUrl] = useState<string | null>(null);
+  const [discordServerKey, setDiscordServerKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,6 +114,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         setPlagiarismCheckerAndroidUrl(cachedConfig.plagiarism_checker_android_url || null);
         setPlagiarismCheckerIosUrl(cachedConfig.plagiarism_checker_ios_url || null);
         setValidateReceiptUrl(cachedConfig.validate_receipt_URL || null);
+        setDiscordServerKey(cachedConfig.discord_server_key || null);
         setIsLoading(false);
         return;
       }
@@ -132,6 +136,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         setPlagiarismCheckerAndroidUrl(freshConfig.plagiarism_checker_android_url || null);
         setPlagiarismCheckerIosUrl(freshConfig.plagiarism_checker_ios_url || null);
         setValidateReceiptUrl(freshConfig.validate_receipt_URL || null);
+        setDiscordServerKey(freshConfig.discord_server_key || null);
         console.log('API config fetched and cached successfully');
       } else {
         setError('Failed to fetch API configuration');
@@ -170,6 +175,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
         plagiarismCheckerAndroidUrl,
         plagiarismCheckerIosUrl,
         validateReceiptUrl,
+        discordServerKey,
         isLoading,
         error,
         refetchConfig,

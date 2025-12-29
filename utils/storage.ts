@@ -161,6 +161,7 @@ export interface ApiConfig {
     plagiarism_checker_android_url?: string;
     plagiarism_checker_ios_url?: string;
     validate_receipt_URL?: string;
+    discord_server_key?: string;
 }
 
 interface CachedApiConfig {
