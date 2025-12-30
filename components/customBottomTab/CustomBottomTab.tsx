@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     // flex: 2, // Active tab takes up more space
     backgroundColor: COLORS.primary, // The "Pill" background color
     marginHorizontal: 5,
+    paddingHorizontal: 3
   },
   tabLabel: {
     fontSize: 12,
