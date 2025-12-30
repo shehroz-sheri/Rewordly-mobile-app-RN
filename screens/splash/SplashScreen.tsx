@@ -47,7 +47,7 @@ const SplashScreen: React.FC = () => {
         console.log('🆕 New user - showing onboarding');
         navigation.replace('Onboarding');
       }
-    }, 2000000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
