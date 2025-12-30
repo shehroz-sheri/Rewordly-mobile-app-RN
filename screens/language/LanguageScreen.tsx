@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
-import CountryFlag from 'react-native-country-flag';
+// import CountryFlag from 'react-native-country-flag';
 import CustomButton from '../../components/customButton/CustomButton';
 
 interface Language {
@@ -66,7 +66,7 @@ const LanguageScreen: React.FC = () => {
         activeOpacity={0.7}
       >
         <View style={styles.languageTextWrapper}>
-          <CountryFlag isoCode={item.code} size={24} style={styles.flagIcon} />
+          {/* <CountryFlag isoCode={item.code} size={24} style={styles.flagIcon} /> */}
           <View>
             <Text style={styles.languageText}>{item.language}</Text>
             <Text style={styles.nativeText}>{item.nativeName}</Text>

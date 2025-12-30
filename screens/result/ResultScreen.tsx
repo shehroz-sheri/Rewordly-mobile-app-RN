@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Clipboard from '@react-native-clipboard/clipboard';
 import RNFS from 'react-native-fs';
+import RNShare from 'react-native-share';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -122,28 +123,13 @@ const ResultScreen: React.FC = () => {
       console.log('📄 Format:', format);
       console.log('📝 Filename:', filename);
 
-      // Request storage permission for Android
-      const hasPermission = await requestStoragePermission();
-      if (!hasPermission) {
-        Alert.alert('Permission Denied', 'Storage permission is required to save files.');
-        return;
-      }
-
-      // Determine file path based on platform
-      let filePath: string;
       const fullFilename = `${filename}.${format.toLowerCase()}`;
 
-      if (Platform.OS === 'android') {
-        // Android: Save to Downloads folder
-        filePath = `${RNFS.DownloadDirectoryPath}/${fullFilename}`;
-      } else {
-        // iOS: Save to Documents folder
-        filePath = `${RNFS.DocumentDirectoryPath}/${fullFilename}`;
-      }
-
+      // Always save to app's document directory first (works for both platforms)
+      const filePath = `${RNFS.DocumentDirectoryPath}/${fullFilename}`;
       console.log('💾 File path:', filePath);
 
-      // Handle different file formats
+      // Generate file based on format
       if (format === 'TXT') {
         // Save as plain text
         await RNFS.writeFile(filePath, currentResultText, 'utf8');
@@ -214,22 +200,47 @@ const ResultScreen: React.FC = () => {
         }
       }
 
-      // Show success message
-      if (Platform.OS === 'android') {
+      // Platform-specific handling after file is created
+      if (Platform.OS === 'ios') {
+        // iOS: Open Share Sheet to let user save/share the file
+        console.log('📱 Opening iOS Share Sheet...');
+
+        await RNShare.open({
+          url: `file://${filePath}`,
+          title: 'Save File',
+          subject: fullFilename,
+          failOnCancel: false,
+        });
+
+        console.log('✅ Share Sheet opened successfully');
+      } else {
+        // Android: Copy file to Downloads folder for direct access
+        const hasPermission = await requestStoragePermission();
+        if (!hasPermission) {
+          Alert.alert('Permission Denied', 'Storage permission is required to save files.');
+          return;
+        }
+
+        const downloadPath = `${RNFS.DownloadDirectoryPath}/${fullFilename}`;
+        await RNFS.copyFile(filePath, downloadPath);
+
         ToastAndroid.show(
           `File saved to Downloads/${fullFilename}`,
           ToastAndroid.LONG,
         );
-      } else {
-        Alert.alert(
-          'Download Complete',
-          `File saved to Documents/${fullFilename}`,
-        );
+        console.log('✅ File saved to Downloads folder');
       }
 
       console.log('✅ Download complete!');
     } catch (error: any) {
       console.error('❌ Download failed:', error);
+
+      // Don't show error if user just cancelled the share sheet
+      if (error.message && error.message.includes('User did not share')) {
+        console.log('ℹ️ User cancelled share sheet');
+        return;
+      }
+
       Alert.alert(
         'Download Failed',
         error.message || 'Failed to save file. Please try again.',
