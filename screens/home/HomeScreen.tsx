@@ -23,7 +23,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useApiConfig } from '../../context/ApiConfigContext';
 import AppLogo from '../../assets/logo.svg';
 import { SubscriptionService } from '../../services/SubscriptionService';
-import { useScreen } from '../../hooks/useScreen';
 
 // --- TYPES ---
 type ToolItem = {
@@ -305,7 +304,6 @@ const HomeScreen: React.FC = () => {
             width={35}
             height={35}
             stroke={COLORS.light}
-            strokeWidth={2}
           />
           <View>
             <Text style={styles.appName}>AI Humanizer Text</Text>
@@ -385,7 +383,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 4,
   },
   appName: {
     fontSize: Dimensions.get('window').height < 700 ? 18 : 20,

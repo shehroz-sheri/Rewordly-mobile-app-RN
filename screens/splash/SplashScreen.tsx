@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -47,7 +47,7 @@ const SplashScreen: React.FC = () => {
         console.log('🆕 New user - showing onboarding');
         navigation.replace('Onboarding');
       }
-    }, 2000);
+    }, 2000000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -67,7 +67,7 @@ const SplashScreen: React.FC = () => {
           },
         ]}
       >
-        <AppLogo />
+        <AppLogo width={Dimensions.get('window').width * 0.4} />
         <Text style={styles.heading}>AI Humanizer Text</Text>
         <Text style={styles.text}>Technology that speaks like you</Text>
       </View>
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 17,
     color: COLORS.dark,
     fontFamily: FONTS.dmSans.medium,
   },
