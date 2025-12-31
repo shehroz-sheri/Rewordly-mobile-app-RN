@@ -6,8 +6,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
-	<key>AI Humanizer</key>
-	<string>Rewordly</string>
+	<key>CFBundleDisplayName</key>
+	<string>AI Humanizer</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
