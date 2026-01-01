@@ -23,7 +23,6 @@
     "react-native": "0.82.1",
     "react-native-fs": "^2.20.0",
     "react-native-iap": "^14.6.2",
-    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-mmkv": "^4.1.0",
     "react-native-nitro-modules": "^0.31.10",

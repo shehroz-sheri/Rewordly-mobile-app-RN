@@ -1,23 +1,14 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   TouchableOpacity,
   Text,
   StyleSheet,
-  Platform,
-  UIManager,
-  LayoutAnimation,
-  Dimensions
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Essential for floating tabs
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const CustomBottomTab: React.FC<BottomTabBarProps> = ({
   state,
@@ -28,7 +19,7 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
 
   return (
     <View style={[styles.mainContainer, { paddingBottom: insets.bottom }]}>
-      <View style={styles.floatingTabBar}>
+      <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label =
@@ -48,13 +39,11 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              // Trigger smooth animation when switching tabs
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
               navigation.navigate(route.name, route.params);
             }
           };
 
-          // --- Icon Mapping ---
+          // Icon Mapping
           let iconName: string;
           if (route.name === 'Home') {
             iconName = isFocused ? 'home' : 'home-outline';
@@ -63,7 +52,7 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
           } else if (route.name === 'Settings') {
             iconName = isFocused ? 'settings' : 'settings-outline';
           } else {
-            iconName = 'grid-outline';
+            iconName = 'ellipse';
           }
 
           return (
@@ -73,26 +62,26 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
               accessibilityState={isFocused ? { selected: true } : {}}
               accessibilityLabel={options.tabBarAccessibilityLabel}
               onPress={onPress}
-              style={[
-                styles.tabButton,
-                isFocused ? styles.tabButtonFocused : null
-              ]}
+              style={styles.tabButton}
               activeOpacity={1}
             >
               <Ionicons
                 name={iconName as any}
-                size={20}
-                color={isFocused ? COLORS.dark : COLORS.light} // Invert color for active state
+                size={24}
+                color={isFocused ? COLORS.dark : '#9CA3AF'}
               />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  { color: isFocused ? COLORS.dark : '#9CA3AF' }
+                ]}
+              >
+                {String(label)}
+              </Text>
 
-              {/* Only show label if focused (Pill Design) */}
+              {/* Active indicator line */}
               {isFocused && (
-                <Text
-                  numberOfLines={1}
-                  style={[styles.tabLabel, isFocused ? { color: COLORS.dark } : { color: COLORS.light }]}
-                >
-                  {String(label)}
-                </Text>
+                <View style={styles.activeIndicator} />
               )}
             </TouchableOpacity>
           );
@@ -102,58 +91,44 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
   );
 };
 
-// --- Styles ---
-
 const styles = StyleSheet.create({
   mainContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.dark,
-    borderTopLeftRadius: 30, // Rounded top corners
-    borderTopRightRadius: 30, // Rounded top corners
+    backgroundColor: COLORS.offWhite,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
-  floatingTabBar: {
+  tabBar: {
     flexDirection: 'row',
-    // backgroundColor: COLORS.dark,
-    width: '100%', // Full width instead of 80%
-    maxWidth: Dimensions.get('window').width > 380 ? '85%' : '80%',
-    borderTopLeftRadius: 24, // Rounded top corners
-    borderTopRightRadius: 24, // Rounded top corners
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm_md,
-    justifyContent: 'space-between',
+    paddingTop: SPACING.sm,
+    // paddingBottom: SPACING.xs,
+    justifyContent: 'space-around',
     alignItems: 'center',
-    alignSelf: 'center',
-
-    // Remove shadow for non-floating design
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-
-    marginBottom: 0, // No margin for non-floating
   },
   tabButton: {
     flex: 1,
-    height: 45,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 30,
-    flexDirection: 'row', // Align icon and text horizontally
-  },
-  tabButtonFocused: {
-    // flex: 2, // Active tab takes up more space
-    backgroundColor: COLORS.primary, // The "Pill" background color
-    marginHorizontal: 5,
-    paddingHorizontal: 3
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.sm + 2,
   },
   tabLabel: {
     fontSize: 12,
     fontFamily: FONTS.sora.medium,
-    marginLeft: 6,
+    marginTop: 4,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 4,
+    width: '50%',
+    backgroundColor: COLORS.dark,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
 });
 

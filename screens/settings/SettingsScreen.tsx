@@ -102,7 +102,7 @@ const SettingsScreen: React.FC = () => {
       iconSet: 'MaterialDesignIcons',
       iconName: 'message-question-outline',
       label: 'Contact Us',
-      onPress: () => console.log('Contact Us'),
+      onPress: () => handleContactUs(),
     },
   ];
 
@@ -188,6 +188,50 @@ const SettingsScreen: React.FC = () => {
       console.log(error);
     }
   };
+
+
+  const handleContactUs = async () => {
+    const email = 'feedback.awais@gmail.com';
+    const subject = 'Feedback - AI Humanizer App';
+    const body = 'Hi,\n\nI would like to share my feedback:\n\n';
+
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    try {
+      if (await Linking.canOpenURL(mailtoUrl)) {
+        await Linking.openURL(mailtoUrl);
+        return;
+      }
+
+      // Always works
+      await Linking.openURL(gmailWebUrl);
+      return;
+
+    } catch (e) {
+      // fallback below
+    }
+
+    Alert.alert(
+      'Contact Us',
+      `Please send your feedback to:\n\n${email}`,
+      [
+        {
+          text: 'Copy Email',
+          onPress: async () => {
+            const Clipboard = (await import('@react-native-clipboard/clipboard')).default;
+            Clipboard.setString(email);
+
+            Platform.OS === 'android'
+              ? ToastAndroid.show('Email copied!', ToastAndroid.SHORT)
+              : Alert.alert('Copied', 'Email copied to clipboard');
+          },
+        },
+        { text: 'OK', style: 'cancel' },
+      ]
+    );
+  };
+
 
   const renderGroup = (groupData: SettingsOption[]) => (
     <View style={styles.groupContainer}>
@@ -278,10 +322,7 @@ const SettingsScreen: React.FC = () => {
           },
           {
             text: 'Contact Us',
-            onPress: () => {
-              // You can implement contact functionality here
-              console.log('Contact Us pressed');
-            },
+            onPress: () => handleContactUs(),
           },
         ]
       );
