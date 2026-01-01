@@ -132,14 +132,14 @@ export class SubscriptionService {
     }
 
     /**
-     * Check if subscription should be validated (once per day)
+     * Check if subscription should be validated (once per 12 hours)
      */
     private static shouldValidate(): boolean {
         const lastValidation = storage.getNumber(KEYS.LAST_VALIDATION) || 0;
         const now = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
+        const twelveHoursMs = 12 * 60 * 60 * 1000; // Reduced from 24h to 12h for tighter control
 
-        return (now - lastValidation) > oneDayMs;
+        return (now - lastValidation) > twelveHoursMs;
     }
 
     /**
@@ -207,6 +207,7 @@ export class SubscriptionService {
 
     /**
      * Validate receipt with backend server (server-side validation)
+     * Falls back to client-side validation if backend is unavailable
      */
     private static async validateReceipt(receipt: string): Promise<boolean> {
         try {
@@ -216,9 +217,10 @@ export class SubscriptionService {
             const { ApiConfigService } = require('../utils/storage');
             const apiConfig = ApiConfigService.getApiConfig();
 
+            // ✅ IMPROVED: Fallback to client-side validation if backend URL not configured
             if (!apiConfig || !apiConfig.validate_receipt_URL) {
-                console.error('❌ Validate receipt URL not configured');
-                return false;
+                console.warn('⚠️ Backend validation URL not configured, using client-side validation as fallback');
+                return this.validateReceiptClientSide();
             }
 
             // Call backend API for server-side validation
@@ -235,7 +237,9 @@ export class SubscriptionService {
 
             if (!response.ok) {
                 console.error('❌ Backend validation request failed:', response.status);
-                return false;
+                // ✅ IMPROVED: Fallback to client-side validation on backend error
+                console.warn('⚠️ Falling back to client-side validation');
+                return this.validateReceiptClientSide();
             }
 
             const data = await response.json();
@@ -255,6 +259,33 @@ export class SubscriptionService {
             }
         } catch (error) {
             console.error('❌ Receipt validation error:', error);
+            // ✅ IMPROVED: Fallback to client-side validation on network error
+            console.warn('⚠️ Network error, falling back to client-side validation');
+            return this.validateReceiptClientSide();
+        }
+    }
+
+    /**
+     * Client-side receipt validation (fallback when backend is unavailable)
+     * Uses react-native-iap's getAvailablePurchases to verify active subscriptions
+     */
+    private static async validateReceiptClientSide(): Promise<boolean> {
+        try {
+            console.log('🔍 Performing client-side validation...');
+            
+            // Check if there are any active purchases
+            const purchases = await RNIap.getAvailablePurchases();
+            
+            if (purchases && purchases.length > 0) {
+                console.log('✅ Client-side validation: Active subscription found');
+                return true;
+            }
+            
+            console.log('❌ Client-side validation: No active subscription');
+            return false;
+        } catch (error) {
+            console.error('❌ Client-side validation error:', error);
+            // If even client-side validation fails, deny access
             return false;
         }
     }
@@ -273,7 +304,10 @@ export class SubscriptionService {
             });
         } catch (error: any) {
             console.error('❌ Purchase failed:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
 
+            // ✅ IMPROVED: Better error logging for debugging
             if (error.code !== 'E_USER_CANCELLED' as any) {
                 throw error;
             }

@@ -55,8 +55,37 @@ const PaywallScreen: React.FC = () => {
       await SubscriptionService.purchaseSubscription(productId);
     } catch (error: any) {
       console.error('Purchase error:', error);
-      if (error.code !== 'E_USER_CANCELLED') {
-        Alert.alert('Purchase Failed', 'Please try again or contact support.');
+
+      // ✅ IMPROVED: Specific error messages based on error codes
+      if (error.code === 'E_USER_CANCELLED') {
+        // User cancelled - no alert needed
+        return;
+      } else if (error.code === 'E_NETWORK_ERROR') {
+        Alert.alert(
+          'Connection Error',
+          'Please check your internet connection and try again.'
+        );
+      } else if (error.code === 'E_ITEM_UNAVAILABLE') {
+        Alert.alert(
+          'Product Unavailable',
+          'This subscription is temporarily unavailable. Please try again later.'
+        );
+      } else if (error.code === 'E_RECEIPT_FAILED' || error.code === 'E_RECEIPT_FINISHED_FAILED') {
+        Alert.alert(
+          'Verification Error',
+          'There was an issue verifying your purchase. Please contact support if this persists.'
+        );
+      } else if (error.code === 'E_DEVELOPER_ERROR') {
+        Alert.alert(
+          'Configuration Error',
+          'There is a configuration issue. Please contact support.'
+        );
+      } else {
+        // Generic error for unknown issues
+        Alert.alert(
+          'Purchase Failed',
+          'An unexpected error occurred. Please try again or contact support.'
+        );
       }
     } finally {
       setLoading(false);
@@ -372,7 +401,7 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: SPACING.xs,
   },
-  contentWrapper:{
+  contentWrapper: {
     flex: 1,
     justifyContent: 'flex-end',
   },
