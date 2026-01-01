@@ -77,7 +77,7 @@ const CustomBottomTab: React.FC<BottomTabBarProps> = ({
                 styles.tabButton,
                 isFocused ? styles.tabButtonFocused : null
               ]}
-              activeOpacity={0.8}
+              activeOpacity={1}
             >
               <Ionicons
                 name={iconName as any}
@@ -111,12 +111,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.dark,
-    borderTopLeftRadius: 24, // Rounded top corners
-    borderTopRightRadius: 24, // Rounded top corners
+    borderTopLeftRadius: 30, // Rounded top corners
+    borderTopRightRadius: 30, // Rounded top corners
   },
   floatingTabBar: {
     flexDirection: 'row',
-    backgroundColor: COLORS.dark,
+    // backgroundColor: COLORS.dark,
     width: '100%', // Full width instead of 80%
     maxWidth: Dimensions.get('window').width > 380 ? '85%' : '80%',
     borderTopLeftRadius: 24, // Rounded top corners

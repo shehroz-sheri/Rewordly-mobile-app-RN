@@ -25,13 +25,12 @@ import { FileReader } from '../../utils/fileReader';
 import { useApiConfig } from '../../context/ApiConfigContext';
 import { SubscriptionService } from '../../services/SubscriptionService';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Renamed functional component
 const PlagiarismRemoverScreen: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { baseURL, fileExtractUrl } = useApiConfig();
+  const { plagiarismRemoverUrl, fileExtractUrl } = useApiConfig();
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadModalVisible, setIsUploadModalVisible] =
@@ -112,8 +111,8 @@ const PlagiarismRemoverScreen: React.FC = () => {
       console.log('✅ Used free try for Plagiarism Remover');
     }
 
-    if (!baseURL) {
-      Alert.alert('Error', 'Backend API not configured. Please try again later.');
+    if (!plagiarismRemoverUrl) {
+      Alert.alert('Error', 'Please try again later.');
       return;
     }
 
@@ -125,7 +124,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
       console.log('📊 Word count:', wordCount);
 
       // Call backend API for plagiarism removal
-      const response = await fetch(baseURL, {
+      const response = await fetch(plagiarismRemoverUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,15 +189,8 @@ const PlagiarismRemoverScreen: React.FC = () => {
   };
 
   const handleUploadOrPaste = () => {
-    // Check if user is premium
-    const isPremium = SubscriptionService.isPremium();
-
-    if (!isPremium) {
-      navigation.navigate('Paywall')
-      return;
-    }
-
-    // Premium user - show upload modal
+    // File upload is now available to all users (not just premium)
+    // Free trial checks still apply when processing the text
     setIsUploadModalVisible(true);
   };
 
@@ -408,12 +400,9 @@ const PlagiarismRemoverScreen: React.FC = () => {
         </Text>
       </View>
 
-      <KeyboardAwareScrollView
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        extraScrollHeight={20}
         showsVerticalScrollIndicator={false}
       >
         {/* Removed Option Selector component call */}
@@ -429,6 +418,11 @@ const PlagiarismRemoverScreen: React.FC = () => {
             multiline={true}
             numberOfLines={20}
             editable={!isLoading}
+            returnKeyType="done"
+            blurOnSubmit={true}
+            onSubmitEditing={() => {
+              // Dismiss keyboard when Done is pressed
+            }}
           />
 
           {/* Centered Paste Button - Only show when input is empty */}
@@ -454,7 +448,7 @@ const PlagiarismRemoverScreen: React.FC = () => {
             )}
           </View>
         </View>
-      </KeyboardAwareScrollView>
+      </ScrollView>
 
       <View style={styles.footerContainer}>
         <View style={styles.actionRow}>
@@ -577,7 +571,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.sm_md,
+    // paddingVertical: SPACING.s_md,
+    height: 40,
     borderTopWidth: 1,
     borderTopColor: COLORS.surface,
     backgroundColor: COLORS.offWhite,
@@ -597,13 +592,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -47 }, { translateY: -50 }],
+    transform: [{ translateX: -38 }, { translateY: -50 }],
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: '#dfe0dbb3', // Light version of primary color
-    borderRadius: SPACING.lg,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm_md,
+    backgroundColor: '#dfe0db81', // Light version of primary color
+    borderRadius: SPACING.md,
     borderWidth: 2,
     borderColor: COLORS.surface,
   },

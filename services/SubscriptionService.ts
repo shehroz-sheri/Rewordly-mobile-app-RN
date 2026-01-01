@@ -272,15 +272,15 @@ export class SubscriptionService {
     private static async validateReceiptClientSide(): Promise<boolean> {
         try {
             console.log('🔍 Performing client-side validation...');
-            
+
             // Check if there are any active purchases
             const purchases = await RNIap.getAvailablePurchases();
-            
+
             if (purchases && purchases.length > 0) {
                 console.log('✅ Client-side validation: Active subscription found');
                 return true;
             }
-            
+
             console.log('❌ Client-side validation: No active subscription');
             return false;
         } catch (error) {
@@ -358,11 +358,11 @@ export class SubscriptionService {
             }
         }
 
-        // Default: 1 try per feature
+        // Default: 2 tries per feature
         const defaultTries: FreeTries = {
-            humanizer: 1,
-            paraphrase: 1,
-            plagiarism: 1,
+            humanizer: 2,
+            paraphrase: 2,
+            plagiarism: 2,
         };
 
         // Save default tries

@@ -150,7 +150,9 @@ export const StorageService = {
 
 // API Configuration interfaces
 export interface ApiConfig {
-    base_URL: string;
+    humanizer_URL: string;
+    paraphrase_URL: string;
+    plagiarism_remover_URL: string;
     backupApi: string;
     ttl: number;
     file_extract_URL?: string;

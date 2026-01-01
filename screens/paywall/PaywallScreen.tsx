@@ -163,21 +163,22 @@ const PaywallScreen: React.FC = () => {
   };
 
 
-
-  // Get free trial period text
-  const getTrialText = (planType: 'weekly' | 'monthly' | 'yearly'): string | null => {
+  // Get trial days number (for dynamic display)
+  const getTrialDays = (planType: 'weekly' | 'monthly' | 'yearly'): number => {
     const product = getProduct(planType);
 
+    // Try to get from product data first
     if (product?.introductoryPrice && product.introductoryPrice === '0') {
       const days = product.introductoryPriceNumberOfPeriodsIOS || 0;
       if (days > 0) {
-        return `${days}-day free trial`;
+        return days;
       }
     }
 
-    if (planType === 'yearly') return '7-day free trial';
-    if (planType === 'monthly') return '3-day free trial';
-    return null;
+    // Fallback to hardcoded values
+    if (planType === 'yearly') return 7;
+    if (planType === 'monthly') return 3;
+    return 0;
   };
 
   const handlePrivacyPolicy = () => {
@@ -268,7 +269,6 @@ const PaywallScreen: React.FC = () => {
               {plans.map((plan) => {
                 const planType = plan.id as 'weekly' | 'monthly' | 'yearly';
                 const isSelected = selectedPlan === planType;
-                const trial = getTrialText(planType);
 
                 return (
                   <TouchableOpacity
@@ -290,7 +290,6 @@ const PaywallScreen: React.FC = () => {
                         </View>
                         <View>
                           <Text style={styles.planName}>{plan.name}</Text>
-                          {trial && <Text style={styles.trialText}>{trial}</Text>}
                         </View>
                       </View>
 
@@ -330,11 +329,18 @@ const PaywallScreen: React.FC = () => {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.subscribeButtonText}>
-                  {selectedPlan === 'yearly' || selectedPlan === 'monthly'
-                    ? 'Start Free Trial'
-                    : 'Subscribe Now'}
-                </Text>
+                <View style={styles.buttonTextContainer}>
+                  <Text style={styles.subscribeButtonText}>
+                    {selectedPlan === 'yearly'
+                      ? 'Start For Free'
+                      : 'Continue'}
+                  </Text>
+                  {selectedPlan === 'yearly' && getTrialDays('yearly') > 0 && (
+                    <Text style={styles.buttonSubText}>
+                      ({getTrialDays('yearly')} days free trial)
+                    </Text>
+                  )}
+                </View>
               )}
             </TouchableOpacity>
 
@@ -461,7 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs_sm,
   },
   featureText: {
-    fontSize: Dimensions.get('window').height < 700 ? 12 : 13,
+    fontSize: Dimensions.get('window').height < 700 ? 12 : 14,
     fontFamily: FONTS.sora.medium,
     color: COLORS.dark,
     marginLeft: SPACING.sm,
@@ -578,10 +584,23 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+  buttonTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
   subscribeButtonText: {
     fontSize: 16,
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
+  },
+  buttonSubText: {
+    fontSize: 11,
+    fontFamily: FONTS.sora.regular,
+    color: COLORS.dark,
+    marginTop: 2,
+    opacity: 0.8,
   },
   cancelText: {
     fontSize: 12,

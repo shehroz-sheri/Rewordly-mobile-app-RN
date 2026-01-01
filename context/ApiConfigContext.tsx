@@ -12,7 +12,9 @@ const GITHUB_CONFIG_URL =
   'https://raw.githubusercontent.com/harborxtechnologies/app_configs/main/humanizer_app_config.json';
 
 interface ApiConfigContextType {
-  baseURL: string | null;
+  humanizerUrl: string | null;
+  paraphraseUrl: string | null;
+  plagiarismRemoverUrl: string | null;
   backupApi: string | null;
   fileExtractUrl: string | null;
   generatePdfUrl: string | null;
@@ -29,7 +31,9 @@ interface ApiConfigContextType {
 }
 
 const ApiConfigContext = createContext<ApiConfigContextType>({
-  baseURL: null,
+  humanizerUrl: null,
+  paraphraseUrl: null,
+  plagiarismRemoverUrl: null,
   backupApi: null,
   fileExtractUrl: null,
   generatePdfUrl: null,
@@ -52,7 +56,9 @@ interface ApiConfigProviderProps {
 export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
   children,
 }) => {
-  const [baseURL, setBaseURL] = useState<string | null>(null);
+  const [humanizerUrl, setHumanizerUrl] = useState<string | null>(null);
+  const [paraphraseUrl, setParaphraseUrl] = useState<string | null>(null);
+  const [plagiarismRemoverUrl, setPlagiarismRemoverUrl] = useState<string | null>(null);
   const [backupApi, setBackupApi] = useState<string | null>(null);
   const [fileExtractUrl, setFileExtractUrl] = useState<string | null>(null);
   const [generatePdfUrl, setGeneratePdfUrl] = useState<string | null>(null);
@@ -80,7 +86,7 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
       const config: ApiConfig = await response.json();
 
       // Validate config structure
-      if (!config.base_URL || !config.backupApi || !config.ttl) {
+      if (!config.humanizer_URL || !config.paraphrase_URL || !config.plagiarism_remover_URL || !config.ttl) {
         throw new Error('Invalid config structure from GitHub');
       }
 
@@ -104,7 +110,9 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
 
       if (cachedConfig) {
         console.log('Using cached API config');
-        setBaseURL(cachedConfig.base_URL);
+        setHumanizerUrl(cachedConfig.humanizer_URL);
+        setParaphraseUrl(cachedConfig.paraphrase_URL);
+        setPlagiarismRemoverUrl(cachedConfig.plagiarism_remover_URL);
         setBackupApi(cachedConfig.backupApi);
         setFileExtractUrl(cachedConfig.file_extract_URL || null);
         setGeneratePdfUrl(cachedConfig.generate_pdf_URL || null);
@@ -126,7 +134,9 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
       if (freshConfig) {
         // Save to cache
         ApiConfigService.saveApiConfig(freshConfig);
-        setBaseURL(freshConfig.base_URL);
+        setHumanizerUrl(freshConfig.humanizer_URL);
+        setParaphraseUrl(freshConfig.paraphrase_URL);
+        setPlagiarismRemoverUrl(freshConfig.plagiarism_remover_URL);
         setBackupApi(freshConfig.backupApi);
         setFileExtractUrl(freshConfig.file_extract_URL || null);
         setGeneratePdfUrl(freshConfig.generate_pdf_URL || null);
@@ -165,7 +175,9 @@ export const ApiConfigProvider: React.FC<ApiConfigProviderProps> = ({
   return (
     <ApiConfigContext.Provider
       value={{
-        baseURL,
+        humanizerUrl,
+        paraphraseUrl,
+        plagiarismRemoverUrl,
         backupApi,
         fileExtractUrl,
         generatePdfUrl,

@@ -10,6 +10,7 @@ import {
   Alert,
   ToastAndroid,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DocumentPickerResponse } from '@react-native-documents/picker';
@@ -25,7 +26,6 @@ import { FileReader } from '../../utils/fileReader';
 import { useApiConfig } from '../../context/ApiConfigContext';
 import { SubscriptionService } from '../../services/SubscriptionService';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useScreen } from '../../hooks/useScreen';
 
 type StyleOption = 'Casual' | 'Business' | 'Academic';
@@ -40,7 +40,7 @@ const HumanizerScreen: React.FC = () => {
   const { screen_width } = useScreen();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { baseURL, fileExtractUrl } = useApiConfig();
+  const { humanizerUrl, fileExtractUrl } = useApiConfig();
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<StyleOption>('Casual');
@@ -107,22 +107,22 @@ const HumanizerScreen: React.FC = () => {
     // ✅ SUBSCRIPTION CHECK
     const isPremium = SubscriptionService.isPremium();
 
-    // if (!isPremium) {
-    //   // Check free tries
-    //   const hasFreeTries = SubscriptionService.hasFreeTries('humanizer');
+    if (!isPremium) {
+      // Check free tries
+      const hasFreeTries = SubscriptionService.hasFreeTries('humanizer');
 
-    //   if (!hasFreeTries) {
-    //     // No free tries left - navigate directly to paywall
-    //     navigation.navigate('Paywall');
-    //     return;
-    //   }
+      if (!hasFreeTries) {
+        // No free tries left - navigate directly to paywall
+        navigation.navigate('Paywall');
+        return;
+      }
 
-    //   // Has free try → Use it
-    //   SubscriptionService.useFreeTry('humanizer');
-    //   console.log('✅ Used free try for Humanizer');
-    // }
+      // Has free try → Use it
+      SubscriptionService.useFreeTry('humanizer');
+      console.log('✅ Used free try for Humanizer');
+    }
 
-    if (!baseURL) {
+    if (!humanizerUrl) {
       Alert.alert('Error', 'Please try again later.');
       return;
     }
@@ -136,7 +136,7 @@ const HumanizerScreen: React.FC = () => {
       console.log('🎨 Selected style:', selectedStyle);
 
       // Call backend API for humanization
-      const response = await fetch(baseURL, {
+      const response = await fetch(humanizerUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -203,15 +203,8 @@ const HumanizerScreen: React.FC = () => {
   };
 
   const handleUploadOrPaste = () => {
-    // Check if user is premium
-    const isPremium = SubscriptionService.isPremium();
-
-    if (!isPremium) {
-      navigation.navigate('Paywall')
-      return;
-    }
-
-    // Premium user - show upload modal
+    // File upload is now available to all users (not just premium)
+    // Free trial checks still apply when processing the text
     setIsUploadModalVisible(true);
   };
 
@@ -443,16 +436,13 @@ const HumanizerScreen: React.FC = () => {
         </Text>
       </View>
 
-      <KeyboardAwareScrollView
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        extraScrollHeight={20}
         showsVerticalScrollIndicator={false}
       >
         {renderStyleSelector()}
-
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.textInput}
@@ -464,6 +454,11 @@ const HumanizerScreen: React.FC = () => {
             multiline={true}
             numberOfLines={10}
             editable={!isLoading}
+            returnKeyType="done"
+            blurOnSubmit={true}
+            onSubmitEditing={() => {
+              // Dismiss keyboard when Done is pressed
+            }}
           />
 
           {/* Centered Paste Button - Only show when input is empty */}
@@ -489,7 +484,7 @@ const HumanizerScreen: React.FC = () => {
             )}
           </View>
         </View>
-      </KeyboardAwareScrollView>
+      </ScrollView>
 
       <View style={styles.footerContainer}>
         <View style={styles.actionRow}>
@@ -632,7 +627,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    // paddingVertical: SPACING.s_md,
+    height: 40,
     borderTopWidth: 1,
     borderTopColor: COLORS.surface,
     backgroundColor: COLORS.offWhite,
@@ -646,7 +642,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -40 }, { translateY: -50 }],
+    transform: [{ translateX: -38 }, { translateY: -50 }],
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING.md,

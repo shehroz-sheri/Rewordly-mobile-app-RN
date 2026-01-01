@@ -73,12 +73,19 @@ const DownloadBottomSheet: React.FC<DownloadBottomSheetProps> = ({
         onRequestClose={onClose}
         animationType="slide"
       >
-        <View style={styles.overlay}>
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={onClose}
+        >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ width: '100%' }}
           >
-            <View style={styles.bottomSheetContainer}>
+            <View
+              style={styles.bottomSheetContainer}
+              onStartShouldSetResponder={() => true}
+            >
               <View style={styles.header}>
                 <Text style={styles.title}>📥 &nbsp; Download Result</Text>
 
@@ -140,7 +147,7 @@ const DownloadBottomSheet: React.FC<DownloadBottomSheetProps> = ({
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );
