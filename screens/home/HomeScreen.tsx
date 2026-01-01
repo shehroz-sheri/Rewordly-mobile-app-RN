@@ -318,10 +318,8 @@ const HomeScreen: React.FC = () => {
               activeOpacity={0.8}
             >
               <Text style={styles.proButtonText}>Go PRO</Text>
-              <MaterialDesignIcons
-                name="crown"
-                size={24}
-                color="#F5C542"
+              <Image
+                source={require('../../assets/images/crown.png')}
                 style={styles.crownIcon}
               />
             </TouchableOpacity>
@@ -395,7 +393,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    borderRadius: 24,
+    borderRadius: 10,
     paddingVertical: 4,
     paddingHorizontal: 12,
   },
@@ -409,6 +407,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -12,
     right: -10,
+    width: 24,
+    height: 24,
     transform: [{ rotate: '45deg' }],
   },
   scrollContent: { paddingTop: 10 },
