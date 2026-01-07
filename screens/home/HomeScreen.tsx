@@ -86,7 +86,7 @@ const HomeScreen: React.FC = () => {
     {
       id: 'paraphraser',
       icon: 'fountain-pen-tip',
-      title: 'Paraphraser Tool',
+      title: 'Paraphrase Tool',
       subtitle: 'Rewrite sentences with clear and original wording.',
       bgColor: '#FFD6C3',
       textColor: COLORS.dark,
@@ -317,11 +317,8 @@ const HomeScreen: React.FC = () => {
               style={styles.proButton}
               activeOpacity={0.8}
             >
-              <Text style={styles.proButtonText}>Go PRO</Text>
-              <Image
-                source={require('../../assets/images/crown.png')}
-                style={styles.crownIcon}
-              />
+              <Text style={styles.crownIcon}>👑</Text>
+              <Text style={styles.proButtonText}>Go Pro</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -404,6 +401,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   crownIcon: {
+    fontSize: 20,
     position: 'absolute',
     top: -12,
     right: -10,

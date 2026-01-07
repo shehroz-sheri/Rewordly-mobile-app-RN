@@ -41,8 +41,9 @@ export class SubscriptionService {
 
     /**
      * Initialize IAP connection and check subscription status
+     * Can optionally wait for API config to be loaded
      */
-    static async initialize() {
+    static async initialize(waitForApiConfig: boolean = false, maxWaitTime: number = 5000) {
         try {
             console.log('🔄 Initializing IAP connection...');
 
@@ -52,14 +53,50 @@ export class SubscriptionService {
                 return;
             }
 
+            // Optionally wait for API config to be loaded
+            if (waitForApiConfig) {
+                const { ApiConfigService } = require('../utils/storage');
+                const startTime = Date.now();
+                let apiConfig = ApiConfigService.getApiConfig();
+
+                while (!apiConfig && (Date.now() - startTime) < maxWaitTime) {
+                    console.log('⏳ Waiting for API config to load...');
+                    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+                    apiConfig = ApiConfigService.getApiConfig();
+                }
+
+                if (apiConfig) {
+                    console.log('✅ API config loaded');
+                } else {
+                    console.warn('⚠️ API config not loaded after waiting, proceeding anyway');
+                }
+            }
+
             await RNIap.initConnection();
             console.log('✅ IAP Connection initialized');
+
+            // ✅ CLEAR CACHE on app start to ensure fresh products
+            console.log('🧹 Clearing product cache on initialization...');
+            try {
+                const currentCache = storage.getString(KEYS.CACHED_PRODUCTS);
+                if (currentCache) {
+                    // Clear cache by setting to empty string
+                    storage.set(KEYS.CACHED_PRODUCTS, '');
+                    console.log('✅ Cache cleared');
+                } else {
+                    console.log('ℹ️ No cache to clear');
+                }
+            } catch (error) {
+                // Fallback: overwrite with empty string
+                storage.set(KEYS.CACHED_PRODUCTS, '');
+                console.log('✅ Cache cleared (fallback method)');
+            }
 
             // Check current subscription status with validation
             await this.checkSubscriptionStatus();
 
-            // ✅ NEW: Fetch subscription products early
-            console.log('📦 Pre-fetching subscription products...');
+            // ✅ NEW: Fetch subscription products early (fresh fetch after cache clear)
+            console.log('📦 Pre-fetching subscription products (fresh)...');
             await this.getSubscriptionProducts();
 
             // Set up purchase listeners
@@ -72,6 +109,24 @@ export class SubscriptionService {
     }
 
     /**
+     * Get full App Store receipt for iOS (required for server-side validation)
+     */
+    private static async getReceiptIOS(): Promise<string | null> {
+        try {
+            if (Platform.OS !== 'ios') {
+                return null;
+            }
+
+            // Get the full App Store receipt (base64 encoded)
+            const receipt = await RNIap.getReceiptDataIOS();
+            return receipt || null;
+        } catch (error) {
+            console.error('❌ Error getting iOS receipt:', error);
+            return null;
+        }
+    }
+
+    /**
      * Setup purchase update and error listeners
      */
     private static setupPurchaseListeners() {
@@ -80,14 +135,22 @@ export class SubscriptionService {
             async (purchase) => {
                 console.log('📦 Purchase update received:', purchase.productId);
 
-                // For iOS, get the receipt from the purchase object
-                // transactionReceipt is deprecated, use transactionId and validate with Apple
-                const receipt = Platform.OS === 'ios'
-                    ? (purchase as any).transactionReceipt || purchase.transactionId
-                    : purchase.transactionId;
+                try {
+                    let receipt: string | null = null;
 
-                if (receipt) {
-                    try {
+                    // For iOS, get the full App Store receipt (required for server-side validation)
+                    if (Platform.OS === 'ios') {
+                        receipt = await this.getReceiptIOS();
+                        if (!receipt) {
+                            console.error('❌ Failed to retrieve iOS receipt');
+                            Alert.alert('Error', 'Failed to retrieve purchase receipt. Please try again.');
+                            return;
+                        }
+                    } else {
+                        receipt = purchase.transactionId || null;
+                    }
+
+                    if (receipt) {
                         // Validate receipt
                         const isValid = await this.validateReceipt(receipt);
 
@@ -95,6 +158,12 @@ export class SubscriptionService {
                             // Grant premium access
                             storage.set(KEYS.IS_PREMIUM, true);
                             storage.set(KEYS.LAST_RECEIPT, receipt);
+
+                            // Extract and store expiration date if available
+                            if ((purchase as any).expirationTime && Platform.OS === 'ios') {
+                                // expirationTime is in milliseconds since epoch
+                                storage.set(KEYS.SUBSCRIPTION_EXPIRY, (purchase as any).expirationTime);
+                            }
 
                             // Mark trial as used if it was yearly plan
                             if (purchase.productId === PRODUCT_IDS.YEARLY) {
@@ -113,9 +182,13 @@ export class SubscriptionService {
                             console.error('❌ Receipt validation failed');
                             Alert.alert('Error', 'Purchase validation failed. Please try again.');
                         }
-                    } catch (error) {
-                        console.error('❌ Error processing purchase:', error);
+                    } else {
+                        console.error('❌ No receipt available for validation');
+                        Alert.alert('Error', 'Failed to retrieve purchase receipt. Please try again.');
                     }
+                } catch (error) {
+                    console.error('❌ Error processing purchase:', error);
+                    Alert.alert('Error', 'An error occurred processing your purchase. Please contact support.');
                 }
             }
         );
@@ -137,7 +210,7 @@ export class SubscriptionService {
     private static shouldValidate(): boolean {
         const lastValidation = storage.getNumber(KEYS.LAST_VALIDATION) || 0;
         const now = Date.now();
-        const twelveHoursMs = 12 * 60 * 60 * 1000; // Reduced from 24h to 12h for tighter control
+        const twelveHoursMs = 12 * 60 * 60 * 1000;
 
         return (now - lastValidation) > twelveHoursMs;
     }
@@ -157,13 +230,25 @@ export class SubscriptionService {
 
                 // Get the latest purchase
                 const latestPurchase = purchases[0];
-                // For iOS, get the receipt from the purchase object
-                const receipt = Platform.OS === 'ios'
-                    ? (latestPurchase as any).transactionReceipt || latestPurchase.transactionId
-                    : latestPurchase.transactionId;
+
+                // For iOS, get the full App Store receipt
+                let receipt: string | null = null;
+                if (Platform.OS === 'ios') {
+                    receipt = await this.getReceiptIOS();
+                } else {
+                    receipt = latestPurchase.transactionId || null;
+                }
 
                 if (receipt) {
-                    // ✅ NEW: Only validate if needed (once per day)
+                    // Check if subscription has expired (if expiration date is stored)
+                    const expiryDate = storage.getNumber(KEYS.SUBSCRIPTION_EXPIRY);
+                    if (expiryDate && Date.now() > expiryDate) {
+                        console.log('❌ Subscription has expired');
+                        storage.set(KEYS.IS_PREMIUM, false);
+                        return false;
+                    }
+
+                    // ✅ Only validate if needed (once per 12 hours)
                     if (this.shouldValidate()) {
                         console.log('🔄 Validating subscription with server...');
                         const isValid = await this.validateReceipt(receipt);
@@ -172,6 +257,11 @@ export class SubscriptionService {
                             storage.set(KEYS.IS_PREMIUM, true);
                             storage.set(KEYS.LAST_RECEIPT, receipt);
                             storage.set(KEYS.LAST_VALIDATION, Date.now());
+
+                            // Store expiration date if available
+                            if ((latestPurchase as any).expirationTime && Platform.OS === 'ios') {
+                                storage.set(KEYS.SUBSCRIPTION_EXPIRY, (latestPurchase as any).expirationTime);
+                            }
 
                             // Mark trial as used if yearly plan
                             if (latestPurchase.productId === PRODUCT_IDS.YEARLY) {
@@ -186,7 +276,14 @@ export class SubscriptionService {
                             return false;
                         }
                     } else {
-                        // Trust existing status if validated recently
+                        // Trust existing status if validated recently, but still check expiration
+                        const expiryDate = storage.getNumber(KEYS.SUBSCRIPTION_EXPIRY);
+                        if (expiryDate && Date.now() > expiryDate) {
+                            console.log('❌ Subscription has expired');
+                            storage.set(KEYS.IS_PREMIUM, false);
+                            return false;
+                        }
+
                         storage.set(KEYS.IS_PREMIUM, true);
                         storage.set(KEYS.LAST_RECEIPT, receipt);
                         console.log('✅ Subscription active (recently validated)');
@@ -296,18 +393,94 @@ export class SubscriptionService {
     static async purchaseSubscription(productId: string) {
         try {
             console.log('🛒 Initiating purchase for:', productId);
-            // New v14+ syntax: use object with sku (iOS) and skus (Android)
-            // Type assertion needed due to TypeScript definition mismatch in v14.6.2
-            await (RNIap.requestPurchase as any)({
-                sku: productId,        // Required for iOS
-                skus: [productId],     // Required for Android (array)
+
+            // Verify IAP connection
+            try {
+                await RNIap.initConnection();
+            } catch (connError: any) {
+                if (!connError?.message?.includes('already')) {
+                    console.warn('⚠️ Connection warning:', connError?.message);
+                }
+            }
+
+            // Ensure products are loaded
+            let cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
+
+            if (!cachedData) {
+                console.log('⚠️ No cached products found. Fetching fresh products...');
+                await this.getSubscriptionProducts();
+                cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
+
+                if (!cachedData) {
+                    throw new Error('Unable to load products. Please check your connection and try again.');
+                }
+            }
+
+            const { products } = JSON.parse(cachedData);
+
+            // Find the specific product
+            const product = products.find((p: any) => {
+                const pId = p.id || p.productId;
+                return pId === productId;
             });
+
+            if (!product) {
+                console.error('❌ Product not found:', productId);
+                throw new Error(`Product ${productId} not found. Please refresh and try again.`);
+            }
+
+            const correctProductId = product.id || product.productId || productId;
+
+            // Verify purchase listeners are set up
+            if (!this.purchaseUpdateSubscription) {
+                console.warn('⚠️ Purchase listeners not set up! Setting them up now...');
+                this.setupPurchaseListeners();
+            }
+
+            // Fetch fresh products to ensure native side has them
+            try {
+                await RNIap.fetchProducts({ skus: [correctProductId], type: 'subs' });
+            } catch (fetchError: any) {
+                console.warn('⚠️ Fresh fetch warning (continuing anyway):', fetchError?.message);
+            }
+
+            // Small delay to ensure native side is ready
+            await new Promise<void>(resolve => setTimeout(() => resolve(), 200));
+
+            // Attempt purchase with multiple methods
+            let lastError: any = null;
+
+            // Method 1: Direct string
+            try {
+                await (RNIap.requestPurchase as any)(correctProductId);
+                return;
+            } catch (err1: any) {
+                lastError = err1;
+            }
+
+            // Method 2: Object with sku
+            try {
+                await RNIap.requestPurchase({ sku: correctProductId } as any);
+                return;
+            } catch (err2: any) {
+                lastError = err2;
+            }
+
+            // Method 3: Using product object directly
+            try {
+                await (RNIap.requestPurchase as any)(product);
+                return;
+            } catch (err3: any) {
+                lastError = err3;
+            }
+
+            // All methods failed
+            throw lastError || new Error('All purchase methods failed');
+
         } catch (error: any) {
             console.error('❌ Purchase failed:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
 
-            // ✅ IMPROVED: Better error logging for debugging
+            // Don't throw if user cancelled
             if (error.code !== 'E_USER_CANCELLED' as any) {
                 throw error;
             }
@@ -324,11 +497,44 @@ export class SubscriptionService {
             const purchases = await RNIap.getAvailablePurchases();
 
             if (purchases && purchases.length > 0) {
-                storage.set(KEYS.IS_PREMIUM, true);
-                console.log('✅ Purchases restored successfully');
-                return true;
+                // Get receipt for validation
+                let receipt: string | null = null;
+                if (Platform.OS === 'ios') {
+                    receipt = await this.getReceiptIOS();
+                } else if (purchases.length > 0) {
+                    receipt = purchases[0].transactionId || null;
+                }
+
+                if (receipt) {
+                    // Validate the restored purchase
+                    const isValid = await this.validateReceipt(receipt);
+
+                    if (isValid) {
+                        storage.set(KEYS.IS_PREMIUM, true);
+                        storage.set(KEYS.LAST_RECEIPT, receipt);
+                        storage.set(KEYS.LAST_VALIDATION, Date.now());
+
+                        // Store expiration date if available
+                        const latestPurchase = purchases[0];
+                        if ((latestPurchase as any).expirationTime && Platform.OS === 'ios') {
+                            storage.set(KEYS.SUBSCRIPTION_EXPIRY, (latestPurchase as any).expirationTime);
+                        }
+
+                        console.log('✅ Purchases restored and validated successfully');
+                        return true;
+                    } else {
+                        console.log('❌ Restored purchase validation failed');
+                        return false;
+                    }
+                } else {
+                    // Fallback: if we can't get receipt, still restore based on available purchases
+                    storage.set(KEYS.IS_PREMIUM, true);
+                    console.log('✅ Purchases restored (receipt validation skipped)');
+                    return true;
+                }
             } else {
                 console.log('ℹ️ No purchases to restore');
+                storage.set(KEYS.IS_PREMIUM, false);
                 return false;
             }
         } catch (error) {
@@ -339,9 +545,24 @@ export class SubscriptionService {
 
     /**
      * Check if user has premium access
+     * Also checks if subscription has expired
      */
     static isPremium(): boolean {
-        return storage.getBoolean(KEYS.IS_PREMIUM) || false;
+        const isPremium = storage.getBoolean(KEYS.IS_PREMIUM) || false;
+
+        if (!isPremium) {
+            return false;
+        }
+
+        // Check if subscription has expired
+        const expiryDate = storage.getNumber(KEYS.SUBSCRIPTION_EXPIRY);
+        if (expiryDate && Date.now() > expiryDate) {
+            console.log('❌ Premium access expired');
+            storage.set(KEYS.IS_PREMIUM, false);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -431,7 +652,16 @@ export class SubscriptionService {
                 return [];
             }
 
-            // ✅ NEW: Check cache first
+            // Ensure connection is initialized before fetching
+            try {
+                await RNIap.initConnection();
+            } catch (connError: any) {
+                if (!connError.message?.includes('already')) {
+                    console.warn('⚠️ Connection check warning:', connError.message);
+                }
+            }
+
+            // Check cache first
             const cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
             if (cachedData) {
                 try {
@@ -439,16 +669,19 @@ export class SubscriptionService {
                     const age = Date.now() - timestamp;
                     const cacheValidMs = 24 * 60 * 60 * 1000; // 24 hours
 
-                    if (age < cacheValidMs) {
+                    if (age < cacheValidMs && products && products.length > 0) {
                         console.log('✅ Using cached products (age:', Math.floor(age / 1000 / 60), 'minutes)');
                         return products;
                     } else {
-                        console.log('⏰ Cache expired, fetching fresh products...');
+                        console.log('⏰ Cache expired or empty, fetching fresh products...');
                     }
                 } catch (parseError) {
                     console.error('❌ Error parsing cached products:', parseError);
                 }
             }
+
+            // Add small delay to ensure connection is fully ready
+            await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
 
             // Fetch fresh products from App Store
             const products = await RNIap.fetchProducts({
@@ -457,19 +690,20 @@ export class SubscriptionService {
                     PRODUCT_IDS.MONTHLY,
                     PRODUCT_IDS.YEARLY,
                 ],
+                type: 'subs'
             });
 
             if (!products || products.length === 0) {
-                console.log('⚠️ No products fetched');
+                console.warn('⚠️ No products fetched');
                 return [];
             }
 
             console.log('✅ Fetched products:', products.length);
             products.forEach((product: any) => {
-                console.log(`  - ${product.productId}: ${product.localizedPrice}`);
+                console.log(`  - ${product.productId || product.id}: ${product.localizedPrice || product.displayPrice}`);
             });
 
-            // ✅ NEW: Cache the products
+            // Cache the products
             storage.set(KEYS.CACHED_PRODUCTS, JSON.stringify({
                 products: products,
                 timestamp: Date.now(),
@@ -480,7 +714,7 @@ export class SubscriptionService {
         } catch (error) {
             console.error('❌ Error fetching subscription products:', error);
 
-            // ✅ NEW: Return cached products as fallback
+            // Return cached products as fallback
             const cachedData = storage.getString(KEYS.CACHED_PRODUCTS);
             if (cachedData) {
                 try {

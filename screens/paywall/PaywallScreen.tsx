@@ -19,8 +19,8 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-import { SubscriptionService } from '../../services/SubscriptionService';
 import { COLORS, FONTS, SPACING } from '../../constants/styling';
+import { SubscriptionService } from '../../services/SubscriptionService';
 
 const PaywallScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -117,9 +117,23 @@ const PaywallScreen: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoadingProducts(true);
-      const subs = await SubscriptionService.getSubscriptionProducts();
-      setProducts(subs);
-      setLoadingProducts(false);
+      try {
+        const subs = await SubscriptionService.getSubscriptionProducts();
+        console.log('📱 PaywallScreen received products:', subs);
+
+        if (subs && subs.length > 0) {
+          setProducts(subs);
+          console.log('✅ Products set successfully');
+        } else {
+          console.warn('⚠️ No products received, showing error state');
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('❌ Error in PaywallScreen fetchProducts:', error);
+        setProducts([]);
+      } finally {
+        setLoadingProducts(false);
+      }
     };
 
     fetchProducts();
@@ -147,27 +161,37 @@ const PaywallScreen: React.FC = () => {
         ? productIds.MONTHLY
         : productIds.WEEKLY;
 
-    return products.find(p => p.productId === productId);
+    // ✅ FIX: Products use 'id' field (from react-native-iap v9+), check both for compatibility
+    const product = products.find(p => (p.id === productId) || (p.productId === productId));
+
+    if (!product) {
+      console.warn(`⚠️ Product not found for ${planType} (${productId}). Available products:`, products.map(p => p.id || p.productId));
+    }
+
+    return product;
   };
 
-  // Get formatted price with currency
+  // Get formatted price with currency - MUST be from App Store, no fallback
   const getFormattedPrice = (planType: 'weekly' | 'monthly' | 'yearly'): string => {
     const product = getProduct(planType);
+    // ✅ FIX: Products use 'displayPrice' or 'localizedPrice'
     if (product?.localizedPrice) {
       return product.localizedPrice;
     }
+    if (product?.displayPrice) {
+      return product.displayPrice;
+    }
 
-    return planType === 'yearly' ? '$29.99'
-      : planType === 'monthly' ? '$9.99'
-        : '$4.99';
+    // No dummy fallback - return loading state
+    return 'Loading...';
   };
 
 
-  // Get trial days number (for dynamic display)
+  // Get trial days number - MUST be from App Store, no fallback
   const getTrialDays = (planType: 'weekly' | 'monthly' | 'yearly'): number => {
     const product = getProduct(planType);
 
-    // Try to get from product data first
+    // Only get from actual product data from App Store
     if (product?.introductoryPrice && product.introductoryPrice === '0') {
       const days = product.introductoryPriceNumberOfPeriodsIOS || 0;
       if (days > 0) {
@@ -175,9 +199,7 @@ const PaywallScreen: React.FC = () => {
       }
     }
 
-    // Fallback to hardcoded values
-    if (planType === 'yearly') return 7;
-    if (planType === 'monthly') return 3;
+    // No dummy fallback - return 0 if not available
     return 0;
   };
 
@@ -197,14 +219,14 @@ const PaywallScreen: React.FC = () => {
       name: 'Yearly',
       period: '/year',
       badge: 'BEST VALUE',
-      discountPercent: 50  // 30% discount → strikethrough price is 30% higher, shows "Save 30%"
+      discountPercent: 50  // 50% discount → shows "Save 50%"
     },
     {
       id: 'monthly',
       name: 'Monthly',
       period: '/month',
       badge: 'POPULAR',
-      discountPercent: 0  // 30% discount → strikethrough price is 30% higher, shows "Save 30%"
+      discountPercent: 0  // No discount
     },
     {
       id: 'weekly',
@@ -266,46 +288,61 @@ const PaywallScreen: React.FC = () => {
 
             {/* Plans - Fixed Height */}
             <View style={styles.plansSection}>
-              {plans.map((plan) => {
-                const planType = plan.id as 'weekly' | 'monthly' | 'yearly';
-                const isSelected = selectedPlan === planType;
+              {loadingProducts && products.length === 0 ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.loadingText}>Loading subscription plans...</Text>
+                </View>
+              ) : products.length === 0 ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>Unable to load subscription plans. Please check your connection and try again.</Text>
+                </View>
+              ) : (
+                plans.map((plan) => {
+                  const planType = plan.id as 'weekly' | 'monthly' | 'yearly';
+                  const isSelected = selectedPlan === planType;
+                  const product = getProduct(planType);
+                  // ✅ FIX: Check both localizedPrice and displayPrice
+                  const hasProduct = !!(product?.localizedPrice || product?.displayPrice);
 
-                return (
-                  <TouchableOpacity
-                    key={plan.id}
-                    style={[styles.planCard, isSelected && styles.planCardSelected]}
-                    onPress={() => setSelectedPlan(planType)}
-                    activeOpacity={0.8}
-                  >
-                    {plan.badge && plan.id === 'yearly' && (
-                      <View style={[styles.badge, styles.badgeBest]}>
-                        <Text style={styles.badgeText}>{plan.badge}</Text>
-                      </View>
-                    )}
+                  return (
+                    <TouchableOpacity
+                      key={plan.id}
+                      style={[styles.planCard, isSelected && styles.planCardSelected, !hasProduct && styles.planCardDisabled]}
+                      onPress={() => hasProduct && setSelectedPlan(planType)}
+                      activeOpacity={hasProduct ? 0.8 : 1}
+                      disabled={!hasProduct}
+                    >
+                      {plan.badge && plan.id === 'yearly' && (
+                        <View style={[styles.badge, styles.badgeBest]}>
+                          <Text style={styles.badgeText}>{plan.badge}</Text>
+                        </View>
+                      )}
 
-                    <View style={styles.planContent}>
-                      <View style={styles.planLeft}>
-                        <View style={styles.radioOuter}>
-                          {isSelected && <View style={styles.radioInner} />}
+                      <View style={styles.planContent}>
+                        <View style={styles.planLeft}>
+                          <View style={styles.radioOuter}>
+                            {isSelected && <View style={styles.radioInner} />}
+                          </View>
+                          <View>
+                            <Text style={styles.planName}>{plan.name}</Text>
+                          </View>
                         </View>
-                        <View>
-                          <Text style={styles.planName}>{plan.name}</Text>
-                        </View>
-                      </View>
 
-                      <View style={styles.planRight}>
-                        <View style={styles.priceRow}>
-                          <Text style={styles.actualPrice}>{getFormattedPrice(planType)}</Text>
-                          <Text style={styles.period}>{plan.period}</Text>
+                        <View style={styles.planRight}>
+                          <View style={styles.priceRow}>
+                            <Text style={styles.actualPrice}>{getFormattedPrice(planType)}</Text>
+                            <Text style={styles.period}>{plan.period}</Text>
+                          </View>
+                          {plan.discountPercent > 0 && (
+                            <Text style={styles.savings}>Save {plan.discountPercent}%</Text>
+                          )}
                         </View>
-                        {plan.discountPercent > 0 && (
-                          <Text style={styles.savings}>Save {plan.discountPercent}%</Text>
-                        )}
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </View>
           </ScrollView>
 
@@ -313,7 +350,7 @@ const PaywallScreen: React.FC = () => {
           <View style={styles.fixedBottomSection}>
             {/* Subscribe Button */}
             <TouchableOpacity
-              style={[styles.subscribeButton, loading && styles.buttonDisabled]}
+              style={[styles.subscribeButton, (loading || loadingProducts || products.length === 0) && styles.buttonDisabled]}
               activeOpacity={0.8}
               onPress={() =>
                 handlePurchase(
@@ -324,7 +361,7 @@ const PaywallScreen: React.FC = () => {
                       : productIds.WEEKLY
                 )
               }
-              disabled={loading}
+              disabled={loading || loadingProducts || products.length === 0}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
@@ -361,15 +398,6 @@ const PaywallScreen: React.FC = () => {
                 <Text style={styles.linkText}>Terms of Use</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Terms Text */}
-            {/* <Text style={styles.termsText}>
-            {selectedPlan === 'yearly'
-              ? 'Free for 7 days, then $29.99/year. Auto-renews unless cancelled.'
-              : selectedPlan === 'monthly'
-                ? 'Free for 3 days, then $9.99/month. Auto-renews unless cancelled.'
-                : 'Subscription renews at $4.99/week unless cancelled.'}
-          </Text> */}
           </View>
         </View>
       </View>
@@ -412,16 +440,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   content: {
-    // flex: 1,
     paddingHorizontal: SPACING.lg,
   },
   crownContainer: {
-    // flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.lg,
-    // height: 'auto',
     minHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 70 : 90,
     maxHeight: Dimensions.get('window').height < 700 ? 0 : Dimensions.get('window').height < 800 ? 110 : 140,
   },
@@ -431,9 +456,7 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
-    // flex: 1,
     justifyContent: 'center',
-    // maxHeight: '35%',
     marginBottom: SPACING.xxl,
   },
   title: {
@@ -488,6 +511,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     backgroundColor: '#F8FDF2',
   },
+  planCardDisabled: {
+    opacity: 0.5,
+  },
   badge: {
     position: 'absolute',
     top: -12,
@@ -536,16 +562,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sora.bold,
     color: COLORS.dark,
   },
-  trialText: {
-    fontSize: Dimensions.get('window').height < 700 ? 11 : 12,
-    fontFamily: FONTS.sora.medium,
-    color: COLORS.gray,
-    marginTop: 1,
-  },
   planRight: {
     alignItems: 'flex-end',
   },
-
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -625,12 +644,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9CA3AF',
   },
-  termsText: {
-    fontSize: 10,
-    fontFamily: FONTS.sora.regular,
-    color: '#9CA3AF',
+  loadingContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: FONTS.dmSans.medium,
+    color: COLORS.gray,
+    marginTop: SPACING.sm,
+  },
+  errorContainer: {
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: FONTS.dmSans.medium,
+    color: '#DC2626',
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 20,
   },
 });
 
